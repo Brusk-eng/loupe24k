@@ -1,0 +1,212 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-08-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "challan_no",
+  "karigar",
+  "col_break_1",
+  "dispatch_date",
+  "due_back_date",
+  "operation",
+  "sec_itc",
+  "itc04_applicable",
+  "job_work_gst",
+  "col_break_2",
+  "challan_date",
+  "vehicle_no",
+  "sec_metal",
+  "metal_items",
+  "sec_stones",
+  "stone_items",
+  "sec_summary",
+  "total_gross_wt",
+  "total_fine_wt",
+  "col_break_3",
+  "total_stone_pieces",
+  "total_stone_carat",
+  "status",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "KMI-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "challan_no",
+   "fieldtype": "Data",
+   "label": "Challan No",
+   "reqd": 1
+  },
+  {
+   "fieldname": "karigar",
+   "fieldtype": "Link",
+   "label": "Karigar / Setter",
+   "options": "Supplier",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "dispatch_date",
+   "fieldtype": "Date",
+   "label": "Dispatch Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "due_back_date",
+   "fieldtype": "Date",
+   "label": "Due Back Date"
+  },
+  {
+   "fieldname": "operation",
+   "fieldtype": "Select",
+   "label": "Operation",
+   "options": "Filing\nPolishing\nSetting\nCasting\nOther"
+  },
+  {
+   "fieldname": "sec_itc",
+   "fieldtype": "Section Break",
+   "label": "ITC-04 Details"
+  },
+  {
+   "fieldname": "itc04_applicable",
+   "fieldtype": "Check",
+   "label": "ITC-04 Applicable"
+  },
+  {
+   "default": "5",
+   "fieldname": "job_work_gst",
+   "fieldtype": "Percent",
+   "label": "Job Work GST %"
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "challan_date",
+   "fieldtype": "Date",
+   "label": "Challan Date"
+  },
+  {
+   "fieldname": "vehicle_no",
+   "fieldtype": "Data",
+   "label": "Vehicle / Courier No"
+  },
+  {
+   "fieldname": "sec_metal",
+   "fieldtype": "Section Break",
+   "label": "Metal Items"
+  },
+  {
+   "fieldname": "metal_items",
+   "fieldtype": "Table",
+   "label": "Metal Items",
+   "options": "Karigar Metal Issue Item"
+  },
+  {
+   "fieldname": "sec_stones",
+   "fieldtype": "Section Break",
+   "label": "Stones"
+  },
+  {
+   "fieldname": "stone_items",
+   "fieldtype": "Table",
+   "label": "Stone Items",
+   "options": "Karigar Metal Issue Stone"
+  },
+  {
+   "fieldname": "sec_summary",
+   "fieldtype": "Section Break",
+   "label": "Summary"
+  },
+  {
+   "fieldname": "total_gross_wt",
+   "fieldtype": "Float",
+   "label": "Total Gross Wt (g)",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_fine_wt",
+   "fieldtype": "Float",
+   "label": "Total Fine Wt (g)",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_stone_pieces",
+   "fieldtype": "Int",
+   "label": "Total Stone Pieces",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_stone_carat",
+   "fieldtype": "Float",
+   "label": "Total Stone Carats",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nIssued\nPartially Returned\nReconciled\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-08-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Loupe 24K",
+ "name": "Karigar Metal Issue",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "karigar",
+ "track_changes": 1
+}

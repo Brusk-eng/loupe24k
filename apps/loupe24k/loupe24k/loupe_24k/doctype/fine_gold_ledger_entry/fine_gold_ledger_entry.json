@@ -1,0 +1,174 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-08-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "entry_type",
+  "posting_date",
+  "col_break_1",
+  "voucher_type",
+  "voucher_no",
+  "sec_break_party",
+  "party_type",
+  "party",
+  "col_break_2",
+  "warehouse",
+  "sec_break_metal",
+  "item",
+  "karat",
+  "touch",
+  "col_break_3",
+  "gross_wt",
+  "fine_wt",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "FGL-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "entry_type",
+   "fieldtype": "Select",
+   "label": "Entry Type",
+   "options": "Issue\nReceipt\nScrap\nLoss\nRecovery\nRework",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "voucher_type",
+   "fieldtype": "Link",
+   "label": "Voucher Type",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "voucher_no",
+   "fieldtype": "Dynamic Link",
+   "label": "Voucher No",
+   "options": "voucher_type"
+  },
+  {
+   "fieldname": "sec_break_party",
+   "fieldtype": "Section Break",
+   "label": "Party & Warehouse"
+  },
+  {
+   "fieldname": "party_type",
+   "fieldtype": "Select",
+   "label": "Party Type",
+   "options": "Supplier\nCustomer\nEmployee"
+  },
+  {
+   "fieldname": "party",
+   "fieldtype": "Dynamic Link",
+   "label": "Party",
+   "options": "party_type"
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "sec_break_metal",
+   "fieldtype": "Section Break",
+   "label": "Metal Details"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "label": "Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "karat",
+   "fieldtype": "Select",
+   "label": "Karat",
+   "options": "24K\n22K\n18K",
+   "reqd": 1
+  },
+  {
+   "fieldname": "touch",
+   "fieldtype": "Float",
+   "label": "Touch Factor",
+   "precision": "4",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "gross_wt",
+   "fieldtype": "Float",
+   "label": "Gross Weight (g)",
+   "precision": "3",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fine_wt",
+   "fieldtype": "Float",
+   "label": "Fine Weight (g)",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-08-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Loupe 24K",
+ "name": "Fine Gold Ledger Entry",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

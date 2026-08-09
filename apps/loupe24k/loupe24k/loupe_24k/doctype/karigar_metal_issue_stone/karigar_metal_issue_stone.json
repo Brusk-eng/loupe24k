@@ -1,0 +1,73 @@
+{
+ "actions": [],
+ "creation": "2026-08-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "stone_master",
+  "stone_lot",
+  "pieces",
+  "carat",
+  "rate_per_ct",
+  "value",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "stone_master",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Stone Master",
+   "options": "Stone Master",
+   "reqd": 1
+  },
+  {
+   "fieldname": "stone_lot",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Stone Lot",
+   "options": "Stone Lot"
+  },
+  {
+   "fieldname": "pieces",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Pieces",
+   "reqd": 1
+  },
+  {
+   "fieldname": "carat",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Carat",
+   "precision": "3",
+   "reqd": 1
+  },
+  {
+   "fieldname": "rate_per_ct",
+   "fieldtype": "Currency",
+   "label": "Rate/Ct"
+  },
+  {
+   "fieldname": "value",
+   "fieldtype": "Currency",
+   "label": "Value",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Loupe 24K",
+ "name": "Karigar Metal Issue Stone",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

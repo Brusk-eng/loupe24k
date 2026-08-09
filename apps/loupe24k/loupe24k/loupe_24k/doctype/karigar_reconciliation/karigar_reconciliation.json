@@ -1,0 +1,257 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-08-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "issue_ref",
+  "karigar",
+  "col_break_1",
+  "reconciliation_date",
+  "operation",
+  "sec_issued",
+  "issued_gross_wt",
+  "issued_fine_wt",
+  "col_break_2",
+  "issued_stone_pieces",
+  "issued_stone_carat",
+  "sec_returned",
+  "returned_items",
+  "sec_metal_rec",
+  "returned_fine_wt",
+  "fine_loss",
+  "col_break_3",
+  "wastage_allowance_pct",
+  "allowed_fine_loss",
+  "excess_fine_loss",
+  "sec_stone_rec",
+  "stones_set",
+  "stones_returned",
+  "stones_broken",
+  "col_break_4",
+  "stone_breakage_allowance_pct",
+  "excess_broken",
+  "sec_verdict",
+  "verdict",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "KREC-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "issue_ref",
+   "fieldtype": "Link",
+   "label": "Job Work Challan",
+   "options": "Karigar Metal Issue",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "issue_ref.karigar",
+   "fieldname": "karigar",
+   "fieldtype": "Link",
+   "label": "Karigar",
+   "options": "Supplier",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "reconciliation_date",
+   "fieldtype": "Date",
+   "label": "Reconciliation Date",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "issue_ref.operation",
+   "fieldname": "operation",
+   "fieldtype": "Data",
+   "label": "Operation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_issued",
+   "fieldtype": "Section Break",
+   "label": "Issued (from Challan)"
+  },
+  {
+   "fieldname": "issued_gross_wt",
+   "fieldtype": "Float",
+   "label": "Issued Gross Wt (g)",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_fine_wt",
+   "fieldtype": "Float",
+   "label": "Issued Fine Wt (g)",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "issued_stone_pieces",
+   "fieldtype": "Int",
+   "label": "Issued Stone Pieces",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_stone_carat",
+   "fieldtype": "Float",
+   "label": "Issued Stone Carats",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_returned",
+   "fieldtype": "Section Break",
+   "label": "Returned Items"
+  },
+  {
+   "fieldname": "returned_items",
+   "fieldtype": "Table",
+   "label": "Returned Items",
+   "options": "Karigar Reconciliation Item"
+  },
+  {
+   "fieldname": "sec_metal_rec",
+   "fieldtype": "Section Break",
+   "label": "Metal Reconciliation"
+  },
+  {
+   "fieldname": "returned_fine_wt",
+   "fieldtype": "Float",
+   "label": "Returned Fine Wt (g)",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fine_loss",
+   "fieldtype": "Float",
+   "label": "Fine Loss (g)",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "wastage_allowance_pct",
+   "fieldtype": "Float",
+   "label": "Wastage Allowance %",
+   "precision": "2"
+  },
+  {
+   "fieldname": "allowed_fine_loss",
+   "fieldtype": "Float",
+   "label": "Allowed Fine Loss (g)",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "excess_fine_loss",
+   "fieldtype": "Float",
+   "label": "Excess Fine Loss (g)",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_stone_rec",
+   "fieldtype": "Section Break",
+   "label": "Stone Reconciliation"
+  },
+  {
+   "fieldname": "stones_set",
+   "fieldtype": "Int",
+   "label": "Stones Set (pieces)"
+  },
+  {
+   "fieldname": "stones_returned",
+   "fieldtype": "Int",
+   "label": "Stones Returned (pieces)"
+  },
+  {
+   "fieldname": "stones_broken",
+   "fieldtype": "Int",
+   "label": "Stones Broken (pieces)"
+  },
+  {
+   "fieldname": "col_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "stone_breakage_allowance_pct",
+   "fieldtype": "Float",
+   "label": "Breakage Allowance %",
+   "precision": "2"
+  },
+  {
+   "fieldname": "excess_broken",
+   "fieldtype": "Int",
+   "label": "Excess Broken Pieces",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_verdict",
+   "fieldtype": "Section Break",
+   "label": "Verdict"
+  },
+  {
+   "fieldname": "verdict",
+   "fieldtype": "Select",
+   "label": "Verdict",
+   "options": "Pass\nWarning\nFail",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-08-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Loupe 24K",
+ "name": "Karigar Reconciliation",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

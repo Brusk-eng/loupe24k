@@ -1,0 +1,135 @@
+{
+ "actions": [],
+ "autoname": "field:stone_name",
+ "creation": "2026-08-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "stone_name",
+  "stone_type",
+  "shape",
+  "col_break_1",
+  "colour",
+  "clarity",
+  "cut",
+  "sec_size",
+  "sieve_size",
+  "average_weight_per_piece",
+  "col_break_2",
+  "rate_per_ct",
+  "sec_tracking",
+  "tracking_type"
+ ],
+ "fields": [
+  {
+   "fieldname": "stone_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Stone Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "stone_type",
+   "fieldtype": "Select",
+   "label": "Stone Type",
+   "options": "Diamond\nRuby\nEmerald\nSapphire\nOther",
+   "reqd": 1
+  },
+  {
+   "fieldname": "shape",
+   "fieldtype": "Select",
+   "label": "Shape",
+   "options": "Round\nPrincess\nOval\nMarquise\nCushion\nOther"
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "colour",
+   "fieldtype": "Data",
+   "label": "Colour"
+  },
+  {
+   "fieldname": "clarity",
+   "fieldtype": "Select",
+   "label": "Clarity",
+   "options": "FL\nIF\nVVS1\nVVS2\nVS1\nVS2\nSI1\nSI2\nI1\nI2\nI3"
+  },
+  {
+   "fieldname": "cut",
+   "fieldtype": "Select",
+   "label": "Cut",
+   "options": "Excellent\nVery Good\nGood\nFair\nPoor"
+  },
+  {
+   "fieldname": "sec_size",
+   "fieldtype": "Section Break",
+   "label": "Size & Pricing"
+  },
+  {
+   "fieldname": "sieve_size",
+   "fieldtype": "Data",
+   "label": "Sieve / Size"
+  },
+  {
+   "fieldname": "average_weight_per_piece",
+   "fieldtype": "Float",
+   "label": "Avg Weight per Piece (ct)",
+   "precision": "3"
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "rate_per_ct",
+   "fieldtype": "Currency",
+   "label": "Rate per Carat"
+  },
+  {
+   "fieldname": "sec_tracking",
+   "fieldtype": "Section Break",
+   "label": "Tracking"
+  },
+  {
+   "default": "Lot",
+   "fieldname": "tracking_type",
+   "fieldtype": "Select",
+   "label": "Tracking Type",
+   "options": "Lot\nSerial",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Loupe 24K",
+ "name": "Stone Master",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "stone_name"
+}

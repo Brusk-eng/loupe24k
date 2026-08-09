@@ -1,0 +1,2 @@
+# Add patch paths here, one per line
+# Example: loupe24k.patches.v0_0.initial_setup

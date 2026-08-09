@@ -1,0 +1,85 @@
+{
+ "actions": [],
+ "creation": "2026-08-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "item_name",
+  "karat",
+  "gross_wt",
+  "touch",
+  "fine_wt",
+  "uom",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "item_code.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "karat",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Karat",
+   "options": "24K\n22K\n18K"
+  },
+  {
+   "fieldname": "gross_wt",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Gross Wt (g)",
+   "precision": "3",
+   "reqd": 1
+  },
+  {
+   "fieldname": "touch",
+   "fieldtype": "Float",
+   "label": "Touch",
+   "precision": "4",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fine_wt",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Fine Wt (g)",
+   "precision": "3",
+   "read_only": 1
+  },
+  {
+   "default": "Gram",
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "label": "UOM",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Loupe 24K",
+ "name": "Karigar Metal Issue Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

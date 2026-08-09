@@ -1,0 +1,98 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-08-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "date",
+  "karat",
+  "col_break_1",
+  "rate_per_g",
+  "touch",
+  "derived_from_24k",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "MR-.YYYY.-.#####"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "karat",
+   "fieldtype": "Select",
+   "label": "Karat",
+   "options": "24K\n22K\n18K",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "rate_per_g",
+   "fieldtype": "Currency",
+   "label": "Rate per Gram (INR)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "touch",
+   "fieldtype": "Float",
+   "label": "Touch Factor",
+   "precision": "4",
+   "read_only": 1
+  },
+  {
+   "fieldname": "derived_from_24k",
+   "fieldtype": "Check",
+   "label": "Auto-derived from 24K Rate"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Loupe 24K",
+ "name": "Metal Rate",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "karat"
+}

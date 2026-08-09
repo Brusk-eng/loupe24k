@@ -1,0 +1,140 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-08-08 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "hallmark_date",
+  "bis_centre",
+  "col_break_1",
+  "serial_no",
+  "item_code",
+  "sec_details",
+  "huid",
+  "purity",
+  "col_break_2",
+  "gross_wt",
+  "net_wt",
+  "stone_wt",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "HUID-.YYYY.-.#####"
+  },
+  {
+   "default": "Today",
+   "fieldname": "hallmark_date",
+   "fieldtype": "Date",
+   "label": "Hallmark Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "bis_centre",
+   "fieldtype": "Data",
+   "label": "BIS Centre",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "serial_no",
+   "fieldtype": "Link",
+   "label": "Ring Serial No",
+   "options": "Serial No"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item"
+  },
+  {
+   "fieldname": "sec_details",
+   "fieldtype": "Section Break",
+   "label": "Hallmark Details"
+  },
+  {
+   "description": "Hallmark Unique ID from BIS",
+   "fieldname": "huid",
+   "fieldtype": "Data",
+   "label": "HUID (6-digit)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "purity",
+   "fieldtype": "Select",
+   "label": "Purity",
+   "options": "24K (999)\n22K (916)\n18K (750)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "gross_wt",
+   "fieldtype": "Float",
+   "label": "Gross Weight (g)",
+   "precision": "3",
+   "reqd": 1
+  },
+  {
+   "fieldname": "net_wt",
+   "fieldtype": "Float",
+   "label": "Net Weight (g)",
+   "precision": "3"
+  },
+  {
+   "fieldname": "stone_wt",
+   "fieldtype": "Float",
+   "label": "Stone Weight (g)",
+   "precision": "3"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-08-08 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Loupe 24K",
+ "name": "Hallmarking Register",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

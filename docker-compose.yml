@@ -1,0 +1,138 @@
+x-image: &image
+  image: ${CUSTOM_IMAGE:-loupe24k-erpnext}:${CUSTOM_TAG:-v15}
+  pull_policy: ${PULL_POLICY:-missing}
+  restart: unless-stopped
+
+x-backend-defaults: &backend-defaults
+  <<: *image
+  volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+  depends_on:
+    configurator:
+      condition: service_completed_successfully
+
+services:
+
+  # ─── One-shot initializer ────────────────────────────────────────────────────
+  configurator:
+    <<: *image
+    restart: "no"
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        ls -1 apps > sites/apps.txt;
+        bench set-config -g db_host $$DB_HOST;
+        bench set-config -gp db_port $$DB_PORT;
+        bench set-config -g redis_cache "redis://$$REDIS_CACHE";
+        bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
+        bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
+        bench set-config -gp socketio_port $$SOCKETIO_PORT;
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      REDIS_CACHE: redis-cache:6379
+      REDIS_QUEUE: redis-queue:6379
+      SOCKETIO_PORT: "9000"
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    depends_on:
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_started
+      redis-queue:
+        condition: service_started
+
+  # ─── Application backend (gunicorn) ──────────────────────────────────────────
+  backend:
+    <<: *backend-defaults
+
+  # ─── WebSocket server (Socket.IO) ────────────────────────────────────────────
+  websocket:
+    <<: *image
+    command: node /home/frappe/frappe-bench/apps/frappe/socketio.js
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+
+  # ─── Background workers ───────────────────────────────────────────────────────
+  queue-short:
+    <<: *backend-defaults
+    command: bench worker --num-workers 2 --queue short,default
+
+  queue-long:
+    <<: *backend-defaults
+    command: bench worker --num-workers 1 --queue long,default,short
+
+  # ─── Scheduler ───────────────────────────────────────────────────────────────
+  scheduler:
+    <<: *backend-defaults
+    command: bench schedule
+
+  # ─── Nginx frontend ──────────────────────────────────────────────────────────
+  frontend:
+    <<: *image
+    command: nginx-entrypoint.sh
+    environment:
+      BACKEND: backend:8000
+      FRAPPE_SITE_NAME_HEADER: $$host
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      PROXY_READ_TIMEOUT: 120
+      CLIENT_MAX_BODY_SIZE: 50m
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    ports:
+      - "${HTTP_PUBLISH_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_started
+      websocket:
+        condition: service_started
+
+  # ─── MariaDB ─────────────────────────────────────────────────────────────────
+  db:
+    image: mariadb:10.6
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-ChangeMe_StrongPassword_123!}
+      MARIADB_AUTO_UPGRADE: "1"
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "--password=${DB_PASSWORD:-ChangeMe_StrongPassword_123!}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ─── Redis (cache) ───────────────────────────────────────────────────────────
+  redis-cache:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  # ─── Redis (queue + socketio) ────────────────────────────────────────────────
+  redis-queue:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-queue-data:/data
+
+volumes:
+  db-data:
+  redis-queue-data:
+  sites:
+  logs:
