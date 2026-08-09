@@ -10,6 +10,28 @@ Loupe 24K is a purpose-built ERPNext app that unifies jewellery inventory, produ
 
 ---
 
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="apps/screenshots/01.png" alt="Loupe 24K Workspace" width="280"/><br/><sub>Loupe 24K workspace — all shortcuts in one place</sub></td>
+    <td align="center"><img src="apps/screenshots/02.png" alt="Item List" width="280"/><br/><sub>Item list — rings, grain, scrap, flux seeded</sub></td>
+    <td align="center"><img src="apps/screenshots/03.png" alt="BOM Raw Materials" width="280"/><br/><sub>BOM raw materials — Ring Plain Band 24K</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="apps/screenshots/04.png" alt="BOM Operations" width="280"/><br/><sub>BOM operations — Cast & Finish routing with time</sub></td>
+    <td align="center"><img src="apps/screenshots/05.png" alt="Metal Rate" width="280"/><br/><sub>Metal Rate — 24K at $100/g, touch factor 1.0</sub></td>
+    <td align="center"><img src="apps/screenshots/06.png" alt="Stone Masters" width="280"/><br/><sub>Stone Masters — Certified Solitaire & Round Diamond</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="apps/screenshots/07.png" alt="Karigar Metal Issue List" width="280"/><br/><sub>Karigar Metal Issues — 5 submitted challans</sub></td>
+    <td align="center"><img src="apps/screenshots/08.png" alt="Fine Gold Ledger Entry" width="280"/><br/><sub>Fine Gold Ledger Entry — Loss type, 0.458g fine</sub></td>
+    <td align="center"><img src="apps/screenshots/09.png" alt="Stone Ledger Entry" width="280"/><br/><sub>Stone Ledger Entry — Broken movement, 1pc Round Diamond</sub></td>
+  </tr>
+</table>
+
+---
+
 ## The Problem
 
 Jewellery businesses operate differently from other retail or manufacturing businesses:
