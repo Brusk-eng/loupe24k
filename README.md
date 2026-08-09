@@ -1,8 +1,12 @@
 # Loupe 24K
 
+<p align="center">
+  <img src="logo.png" alt="Loupe 24K" width="200" />
+</p>
+
 **The jewellery business management system built for the way you actually work.**
 
-Loupe 24K is a purpose-built ERPNext application that brings the full back-office of a modern jewellery business — inventory, production, sales, and compliance — into one place. Whether you run a single workshop or a multi-location retail chain, Loupe 24K replaces the patchwork of spreadsheets, WhatsApp threads, and disconnected tools with a single source of truth.
+Loupe 24K is a purpose-built ERPNext app that unifies jewellery inventory, production, sales, and compliance. From a single workshop to a multi-location chain, it replaces spreadsheets, WhatsApp, and disconnected tools with one source of truth.
 
 ---
 
@@ -45,6 +49,9 @@ A separate sub-ledger for diamonds and gemstones measured in carats and pieces. 
 ### Live Metal Rate & Pricing
 Daily karat-wise rates with auto-derivation (22K and 18K derive from the 24K master via touch). Invoice price build-up: fine gold value + making charges + wastage + stone value + hallmarking, with split GST (3% gold, 5% services).
 
+### Multi-Currency Support
+Transact in any currency — USD, AED, GBP, EUR, or custom. Metal rates and stone values are recorded in the base currency (INR) and converted at the exchange rate in effect at the time of invoice. Wholesale export orders, overseas karigar settlements, and international stone purchases all post to the correct ledger in both the transaction currency and the base currency. Exchange gain/loss entries are generated automatically on settlement.
+
 ### Karigar / Job Work Management
 Formal job-work challans (ITC-04 compliant) issue metal and stones to artisans. A 1-year return clock enforces CGST Section 143. Reconciliation compares returned fine gold against a per-karigar wastage allowance (default 2%) and flags excess loss.
 
@@ -82,7 +89,14 @@ Custom fields are added to standard ERPNext DocTypes (Item, BOM, Work Order, Sto
 - Jewellery manufacturers and wholesalers managing ring or ornament production
 - Retail jewellery stores with repair and custom order services
 - Chains running multiple showrooms or workshops
+- Exporters billing in USD, AED, or other foreign currencies
 - Businesses that need ITC-04 compliance and BIS hallmarking documentation
+
+---
+
+## Developer Documentation
+
+For technical setup, Docker services, daily workflow, custom DocType reference, and business logic internals, see [DEVNOTES.md](DEVNOTES.md).
 
 ---
 

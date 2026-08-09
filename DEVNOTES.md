@@ -190,6 +190,68 @@ All DocTypes live in the `Loupe 24K` module (`loupe_24k/doctype/`).
 
 ---
 
+## DocType Relationship Diagram
+
+```mermaid
+erDiagram
+
+    %% ── Masters ──────────────────────────────────────────────────────────────
+    STONE_MASTER ||--o{ STONE_LOT : "defines"
+    METAL_RATE   }o--o| METAL_RATE : "derives-from (24K master)"
+
+    %% ── Karigar Issue ────────────────────────────────────────────────────────
+    KARIGAR_METAL_ISSUE ||--|{ KARIGAR_METAL_ISSUE_ITEM   : "contains"
+    KARIGAR_METAL_ISSUE ||--|{ KARIGAR_METAL_ISSUE_STONE  : "contains"
+    KARIGAR_METAL_ISSUE }o--|| SUPPLIER                   : "issued-to (karigar)"
+    KARIGAR_METAL_ISSUE_ITEM  }o--|| ITEM                 : "references"
+    KARIGAR_METAL_ISSUE_STONE }o--|| STONE_LOT            : "references"
+
+    %% ── Karigar Reconciliation ───────────────────────────────────────────────
+    KARIGAR_RECONCILIATION ||--|{ KARIGAR_RECONCILIATION_ITEM : "contains"
+    KARIGAR_RECONCILIATION }o--|| KARIGAR_METAL_ISSUE         : "settles"
+
+    %% ── Scrap Recovery ───────────────────────────────────────────────────────
+    SCRAP_RECOVERY_ENTRY ||--|{ SCRAP_RECOVERY_ITEM : "contains"
+    SCRAP_RECOVERY_ENTRY }o--|| SUPPLIER            : "sent-to (refiner)"
+
+    %% ── Hallmarking ──────────────────────────────────────────────────────────
+    HALLMARKING_REGISTER }o--|| SERIAL_NO : "records HUID on"
+    SERIAL_NO            }o--|| ITEM      : "instance-of"
+
+    %% ── Standard manufacturing flow ──────────────────────────────────────────
+    WORK_ORDER   }o--|| BOM        : "uses"
+    STOCK_ENTRY  }o--|| WORK_ORDER : "against"
+    JOB_CARD     }o--|| WORK_ORDER : "against"
+
+    %% ── Sales documents ──────────────────────────────────────────────────────
+    QUOTATION      ||--|{ QUOTATION_ITEM      : "contains"
+    SALES_INVOICE  ||--|{ SALES_INVOICE_ITEM  : "contains"
+    QUOTATION_ITEM     }o--|| ITEM            : "references"
+    SALES_INVOICE_ITEM }o--|| ITEM            : "references"
+
+    %% ── Fine Gold Ledger postings ────────────────────────────────────────────
+    KARIGAR_METAL_ISSUE    ||--o{ FINE_GOLD_LEDGER_ENTRY : "posts-to"
+    KARIGAR_RECONCILIATION ||--o{ FINE_GOLD_LEDGER_ENTRY : "posts-to"
+    SCRAP_RECOVERY_ENTRY   ||--o{ FINE_GOLD_LEDGER_ENTRY : "posts-to"
+    STOCK_ENTRY            ||--o{ FINE_GOLD_LEDGER_ENTRY : "posts-to"
+
+    %% ── Stone Ledger postings ────────────────────────────────────────────────
+    KARIGAR_METAL_ISSUE    ||--o{ STONE_LEDGER_ENTRY : "posts-to"
+    KARIGAR_RECONCILIATION ||--o{ STONE_LEDGER_ENTRY : "posts-to"
+    STONE_LOT              ||--o{ STONE_LEDGER_ENTRY : "tracked-in"
+```
+
+**Reading the diagram**
+
+| Notation | Meaning |
+|---|---|
+| `\|\|--\|{` | One-to-many, both sides mandatory (child table embedded in parent) |
+| `}o--\|\|` | Many-to-one Link field (foreign key) |
+| `\|\|--o{` | One-to-many posting relationship |
+| `}o--o\|` | Optional self-reference (Metal Rate derives from 24K master) |
+
+---
+
 ## Custom Fields on Standard DocTypes
 
 Defined in `setup/install.py → CUSTOM_FIELDS`. Applied automatically on `bench migrate`.
