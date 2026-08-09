@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"l24k-masters\",\"type\":\"card\",\"data\":{\"card_name\":\"Masters\",\"col\":4}},{\"id\":\"l24k-karigar-ops\",\"type\":\"card\",\"data\":{\"card_name\":\"Karigar Operations\",\"col\":4}},{\"id\":\"l24k-scrap-hall\",\"type\":\"card\",\"data\":{\"card_name\":\"Scrap & Hallmarking\",\"col\":4}},{\"id\":\"l24k-ledgers\",\"type\":\"card\",\"data\":{\"card_name\":\"Ledgers\",\"col\":4}}]",
+ "content": "[{\"id\":\"l24k-masters\",\"type\":\"card\",\"data\":{\"card_name\":\"Masters\",\"col\":4}},{\"id\":\"l24k-karigar-ops\",\"type\":\"card\",\"data\":{\"card_name\":\"Karigar Operations\",\"col\":4}},{\"id\":\"l24k-manufacturing\",\"type\":\"card\",\"data\":{\"card_name\":\"Manufacturing\",\"col\":4}},{\"id\":\"l24k-sales\",\"type\":\"card\",\"data\":{\"card_name\":\"Sales\",\"col\":4}},{\"id\":\"l24k-scrap-hall\",\"type\":\"card\",\"data\":{\"card_name\":\"Scrap & Hallmarking\",\"col\":4}},{\"id\":\"l24k-ledgers\",\"type\":\"card\",\"data\":{\"card_name\":\"Ledgers\",\"col\":4}}]",
  "docstatus": 0,
  "doctype": "Workspace",
  "for_user": "",
@@ -63,6 +63,30 @@
    "doctype": "Workspace Link",
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Item",
+   "link_count": 0,
+   "link_to": "Item",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Workspace Link",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Supplier",
+   "link_count": 0,
+   "link_to": "Supplier",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Workspace Link",
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Karigar Operations",
    "link_count": 0,
    "link_to": "",
@@ -90,6 +114,114 @@
    "label": "Karigar Reconciliation",
    "link_count": 0,
    "link_to": "Karigar Reconciliation",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Workspace Link",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Manufacturing",
+   "link_count": 0,
+   "link_to": "",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Workspace Link",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "BOM",
+   "link_count": 0,
+   "link_to": "BOM",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Workspace Link",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Work Order",
+   "link_count": 0,
+   "link_to": "Work Order",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Workspace Link",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Stock Entry",
+   "link_count": 0,
+   "link_to": "Stock Entry",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Workspace Link",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Job Card",
+   "link_count": 0,
+   "link_to": "Job Card",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Workspace Link",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Serial No",
+   "link_count": 0,
+   "link_to": "Serial No",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Workspace Link",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Sales",
+   "link_count": 0,
+   "link_to": "",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Workspace Link",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Quotation",
+   "link_count": 0,
+   "link_to": "Quotation",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "doctype": "Workspace Link",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Sales Invoice",
+   "link_count": 0,
+   "link_to": "Sales Invoice",
    "link_type": "DocType",
    "onboard": 1,
    "type": "Link"
@@ -147,9 +279,9 @@
    "doctype": "Workspace Link",
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Stone Ledger Entry",
+   "label": "Fine Gold Ledger Entry",
    "link_count": 0,
-   "link_to": "Stone Ledger Entry",
+   "link_to": "Fine Gold Ledger Entry",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -159,9 +291,9 @@
    "doctype": "Workspace Link",
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Fine Gold Ledger Entry",
+   "label": "Stone Ledger Entry",
    "link_count": 0,
-   "link_to": "Fine Gold Ledger Entry",
+   "link_to": "Stone Ledger Entry",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -189,6 +321,38 @@
    "type": "DocType"
   },
   {
+   "color": "#EC407A",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Stone Master",
+   "link_to": "Stone Master",
+   "type": "DocType"
+  },
+  {
+   "color": "#26A69A",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Stone Lot",
+   "link_to": "Stone Lot",
+   "type": "DocType"
+  },
+  {
+   "color": "#66BB6A",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Item",
+   "link_to": "Item",
+   "type": "DocType"
+  },
+  {
+   "color": "#8D6E63",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Supplier",
+   "link_to": "Supplier",
+   "type": "DocType"
+  },
+  {
    "color": "#FF7043",
    "doctype": "Workspace Shortcut",
    "format": "",
@@ -205,11 +369,91 @@
    "type": "DocType"
   },
   {
-   "color": "#26A69A",
+   "color": "#29B6F6",
    "doctype": "Workspace Shortcut",
    "format": "",
-   "label": "Stone Lot",
-   "link_to": "Stone Lot",
+   "label": "BOM",
+   "link_to": "BOM",
+   "type": "DocType"
+  },
+  {
+   "color": "#1E88E5",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Work Order",
+   "link_to": "Work Order",
+   "type": "DocType"
+  },
+  {
+   "color": "#AB47BC",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Stock Entry",
+   "link_to": "Stock Entry",
+   "type": "DocType"
+  },
+  {
+   "color": "#F06292",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Job Card",
+   "link_to": "Job Card",
+   "type": "DocType"
+  },
+  {
+   "color": "#4DB6AC",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Serial No",
+   "link_to": "Serial No",
+   "type": "DocType"
+  },
+  {
+   "color": "#9CCC65",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Quotation",
+   "link_to": "Quotation",
+   "type": "DocType"
+  },
+  {
+   "color": "#EF5350",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Sales Invoice",
+   "link_to": "Sales Invoice",
+   "type": "DocType"
+  },
+  {
+   "color": "#78909C",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Scrap Recovery Entry",
+   "link_to": "Scrap Recovery Entry",
+   "type": "DocType"
+  },
+  {
+   "color": "#5C6BC0",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Hallmarking Register",
+   "link_to": "Hallmarking Register",
+   "type": "DocType"
+  },
+  {
+   "color": "#FF8F00",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Fine Gold Ledger Entry",
+   "link_to": "Fine Gold Ledger Entry",
+   "type": "DocType"
+  },
+  {
+   "color": "#00BCD4",
+   "doctype": "Workspace Shortcut",
+   "format": "",
+   "label": "Stone Ledger Entry",
+   "link_to": "Stone Ledger Entry",
    "type": "DocType"
   }
  ],

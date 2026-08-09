@@ -96,9 +96,17 @@ def seed():
     frappe.db.commit()
     frappe.logger().info("[loupe24k seed] Operations done")
 
+    _seed_routings()
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Routings done")
+
     _seed_items(company)
     frappe.db.commit()
     frappe.logger().info("[loupe24k seed] Items done")
+
+    _seed_boms(company)
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] BOMs done")
 
     _seed_stone_masters()
     frappe.db.commit()
@@ -119,6 +127,30 @@ def seed():
     _seed_metal_rates()
     frappe.db.commit()
     frappe.logger().info("[loupe24k seed] Metal Rates done")
+
+    kmi_names = _seed_karigar_metal_issues()
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Karigar Metal Issues done")
+
+    _seed_karigar_reconciliations(kmi_names)
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Karigar Reconciliations done")
+
+    _seed_scrap_recovery_entries()
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Scrap Recovery Entries done")
+
+    _seed_fine_gold_ledger_entries()
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Fine Gold Ledger Entries done")
+
+    _seed_stone_ledger_entries()
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Stone Ledger Entries done")
+
+    _seed_hallmarking_entries()
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Hallmarking Entries done")
 
     _seed_workspace()
     frappe.db.commit()
@@ -397,6 +429,209 @@ def _seed_operations():
             doc.insert(ignore_permissions=True)
 
 
+# ── Routings ──────────────────────────────────────────────────────────────────
+
+def _seed_routings():
+    """Create manufacturing routings (sequences of operations) for the jewellery workflow.
+
+    Flow: raw gold → [Alloying] → 22K grain → [Casting] → ring blank → [Finishing] → finished ring
+    """
+    routings = [
+        {
+            "routing_name": "Alloying",
+            "operations": [
+                {"operation": "Alloying", "workstation": "Melting Furnace", "time_in_mins": 60},
+            ],
+        },
+        {
+            "routing_name": "Casting",
+            "operations": [
+                {"operation": "Casting", "workstation": "Casting Station", "time_in_mins": 45},
+            ],
+        },
+        {
+            "routing_name": "Jewellery Finishing",
+            "operations": [
+                {"operation": "Filing",        "workstation": "Filing Bench",        "time_in_mins": 30},
+                {"operation": "Polishing",     "workstation": "Polishing Wheel",     "time_in_mins": 20},
+                {"operation": "QC Inspection", "workstation": "QC Bench",            "time_in_mins": 15},
+                {"operation": "Hallmarking",   "workstation": "Hallmarking Station", "time_in_mins": 10},
+            ],
+        },
+        {
+            "routing_name": "Stone Setting Finish",
+            "operations": [
+                {"operation": "Filing",        "workstation": "Filing Bench",        "time_in_mins": 30},
+                {"operation": "Stone Setting", "workstation": "Stone Setting Bench", "time_in_mins": 60},
+                {"operation": "Polishing",     "workstation": "Polishing Wheel",     "time_in_mins": 20},
+                {"operation": "QC Inspection", "workstation": "QC Bench",            "time_in_mins": 15},
+                {"operation": "Hallmarking",   "workstation": "Hallmarking Station", "time_in_mins": 10},
+            ],
+        },
+        {
+            # 24K rings skip the grain prep step — cast directly from pure gold
+            "routing_name": "Cast & Finish",
+            "operations": [
+                {"operation": "Casting",       "workstation": "Casting Station",     "time_in_mins": 45},
+                {"operation": "Filing",        "workstation": "Filing Bench",        "time_in_mins": 30},
+                {"operation": "Polishing",     "workstation": "Polishing Wheel",     "time_in_mins": 20},
+                {"operation": "QC Inspection", "workstation": "QC Bench",            "time_in_mins": 15},
+                {"operation": "Hallmarking",   "workstation": "Hallmarking Station", "time_in_mins": 10},
+            ],
+        },
+    ]
+
+    for r in routings:
+        if not frappe.db.exists("Routing", r["routing_name"]):
+            doc = frappe.get_doc({
+                "doctype": "Routing",
+                "routing_name": r["routing_name"],
+                "operations": [
+                    {
+                        "operation":    op["operation"],
+                        "workstation":  op["workstation"],
+                        "time_in_mins": op["time_in_mins"],
+                        "hour_rate":    0,
+                    }
+                    for op in r["operations"]
+                ],
+            })
+            doc.insert(ignore_permissions=True)
+
+
+# ── BOMs ───────────────────────────────────────────────────────────────────────
+
+def _seed_boms(company):
+    """Create and submit default BOMs for manufactured items.
+
+    Manufacturing chain:
+      Pure Gold 24K + Silver Alloy → 22K Gold Grain (Alloying)
+      22K Gold Grain                → Ring Blank 22K (Casting)
+      Ring Blank 22K                → Ring - Plain Band 22K (Jewellery Finishing)
+      Ring Blank 22K                → Ring - Solitaire 22K  (Stone Setting Finish)
+      Pure Gold 24K                 → Ring - Plain Band 24K (Cast & Finish)
+    """
+    boms = [
+        {
+            # 100 g batch: 91.67 g pure gold + 8.33 g silver → 100 g 22K grain.
+            # 0.5% melt loss assumed; wastage noted on BOM custom field.
+            "item": "22K Gold Grain",
+            "quantity": 100,
+            "routing": "Alloying",
+            "items": [
+                {"item_code": "Pure Gold 24K", "qty": 91.67},
+                {"item_code": "Silver Alloy",  "qty": 8.33},
+                {"item_code": "Borax Flux",    "qty": 5.0},
+            ],
+            "custom": {
+                "target_touch": "22K",
+                "wastage_pct": 0.5,
+            },
+        },
+        {
+            # Single ring blank (~5 g).  Extra input covers casting sprue;
+            # sprue is recovered as Sprue/Button Scrap 22K via Stock Entry.
+            "item": "Ring Blank 22K",
+            "quantity": 5,
+            "routing": "Casting",
+            "items": [
+                {"item_code": "22K Gold Grain", "qty": 5.5},
+                {"item_code": "Borax Flux",     "qty": 2.0},
+            ],
+            "custom": {
+                "target_touch": "22K",
+                "wastage_pct": 5.0,
+                "scrap_by_products": "Sprue/Button Scrap 22K",
+            },
+        },
+        {
+            # Plain band: file and polish a blank down to finished weight.
+            # Filing + polishing dust tracked as scrap on the Stock Entry.
+            "item": "Ring - Plain Band 22K",
+            "quantity": 4.5,
+            "routing": "Jewellery Finishing",
+            "items": [
+                {"item_code": "Ring Blank 22K", "qty": 5.0},
+            ],
+            "custom": {
+                "target_touch": "22K",
+                "wastage_pct": 1.5,
+                "scrap_by_products": "Filing Scrap 22K, Polishing Dust 22K",
+            },
+        },
+        {
+            # Solitaire ring: same blank, but stone setting added to the route.
+            # expected_setting_loss_pct covers broken/lost melee during setting.
+            "item": "Ring - Solitaire 22K",
+            "quantity": 5,
+            "routing": "Stone Setting Finish",
+            "items": [
+                {"item_code": "Ring Blank 22K", "qty": 5.0},
+            ],
+            "custom": {
+                "target_touch": "22K",
+                "wastage_pct": 1.5,
+                "expected_setting_loss_pct": 2.0,
+                "scrap_by_products": "Filing Scrap 22K, Polishing Dust 22K",
+            },
+        },
+        {
+            # 24K ring: cast directly from pure gold — no alloying step needed.
+            "item": "Ring - Plain Band 24K",
+            "quantity": 4,
+            "routing": "Cast & Finish",
+            "items": [
+                {"item_code": "Pure Gold 24K", "qty": 4.5},
+                {"item_code": "Borax Flux",    "qty": 2.0},
+            ],
+            "custom": {
+                "target_touch": "24K",
+                "wastage_pct": 2.0,
+            },
+        },
+    ]
+
+    for bom_data in boms:
+        # Skip if any non-cancelled BOM already exists for this item
+        if frappe.db.get_value("BOM", {"item": bom_data["item"], "docstatus": ["!=", 2]}, "name"):
+            continue
+
+        doc = frappe.get_doc({
+            "doctype": "BOM",
+            "item": bom_data["item"],
+            "quantity": bom_data["quantity"],
+            "uom": "Gram",
+            "company": company,
+            "is_default": 1,
+            "is_active": 1,
+            "with_operations": 1,
+            "routing": bom_data["routing"],
+            "items": [
+                {
+                    "item_code":  row["item_code"],
+                    "qty":        row["qty"],
+                    "uom":        "Gram",
+                    "stock_uom":  "Gram",
+                }
+                for row in bom_data["items"]
+            ],
+        })
+        doc.insert(ignore_permissions=True)
+
+        for field, val in bom_data["custom"].items():
+            try:
+                doc.db_set(field, val)
+            except Exception:
+                pass
+
+        try:
+            doc.submit()
+        except Exception as e:
+            frappe.logger().warning(
+                f"[loupe24k seed] BOM submit failed for {bom_data['item']}: {e}"
+            )
+
+
 # ── Items ─────────────────────────────────────────────────────────────────────
 
 def _seed_items(company):
@@ -634,10 +869,510 @@ def _seed_metal_rates():
         doc.insert(ignore_permissions=True)
 
 
+# ── Transaction seed constants ────────────────────────────────────────────────
+
+_SEED_REMARK = "[loupe24k-seed]"
+_TOUCH = {"24K": 1.0000, "22K": 0.9167, "18K": 0.7500}
+
+
+def _fine(gross_wt, karat):
+    return round((gross_wt or 0) * _TOUCH.get(karat, 1.0), 3)
+
+
+# ── Karigar Metal Issues ───────────────────────────────────────────────────────
+
+def _seed_karigar_metal_issues():
+    """Create and submit 5 Karigar Metal Issue challans covering each operation type.
+    Returns a dict {challan_no: doc.name} for use by _seed_karigar_reconciliations().
+    """
+    today = frappe.utils.today()
+    # Resolve stone lot names (autoname = SLOT-.YYYY.-.#####, not the lot_name)
+    melee_lot = frappe.db.get_value("Stone Lot", {"lot_name": "MELEE-001"}, "name")
+    sol_lot   = frappe.db.get_value("Stone Lot", {"lot_name": "SOL-001"},   "name")
+
+    kmi_list = [
+        {
+            # Filing — ring blanks sent to Ramesh for filing
+            "challan_no": "SEED/001",
+            "karigar": "Ramesh Karigar",
+            "dispatch_date": frappe.utils.add_months(today, -2),
+            "operation": "Filing",
+            "metal_items": [
+                {"item_code": "Ring Blank 22K", "karat": "22K", "gross_wt": 50.0, "uom": "Gram"},
+            ],
+            "stone_items": [],
+        },
+        {
+            # Setting — plain 22K rings + melee diamonds sent to Suresh for setting
+            "challan_no": "SEED/002",
+            "karigar": "Suresh Setter",
+            "dispatch_date": frappe.utils.add_months(today, -2),
+            "operation": "Setting",
+            "metal_items": [
+                {"item_code": "Ring - Plain Band 22K", "karat": "22K", "gross_wt": 45.0, "uom": "Gram"},
+            ],
+            "stone_items": [
+                {"stone_master": "Round Diamond", "stone_lot": melee_lot,
+                 "pieces": 20, "carat": 0.50, "rate_per_ct": 180},
+            ] if melee_lot else [],
+        },
+        {
+            # Casting — 22K grain sent to Ramesh for casting into ring blanks
+            "challan_no": "SEED/003",
+            "karigar": "Ramesh Karigar",
+            "dispatch_date": frappe.utils.add_months(today, -3),
+            "operation": "Casting",
+            "metal_items": [
+                {"item_code": "22K Gold Grain", "karat": "22K", "gross_wt": 100.0, "uom": "Gram"},
+            ],
+            "stone_items": [],
+        },
+        {
+            # Polishing — 22K finished rings sent to Ramesh for polishing
+            "challan_no": "SEED/004",
+            "karigar": "Ramesh Karigar",
+            "dispatch_date": frappe.utils.add_months(today, -1),
+            "operation": "Polishing",
+            "metal_items": [
+                {"item_code": "Ring - Plain Band 22K", "karat": "22K", "gross_wt": 40.0, "uom": "Gram"},
+            ],
+            "stone_items": [],
+        },
+        {
+            # Setting — 24K plain band + solitaire sent to Suresh for setting
+            "challan_no": "SEED/005",
+            "karigar": "Suresh Setter",
+            "dispatch_date": frappe.utils.add_months(today, -1),
+            "operation": "Setting",
+            "metal_items": [
+                {"item_code": "Ring - Plain Band 24K", "karat": "24K", "gross_wt": 20.0, "uom": "Gram"},
+            ],
+            "stone_items": [
+                {"stone_master": "Certified Solitaire Diamond", "stone_lot": sol_lot,
+                 "pieces": 1, "carat": 0.30, "rate_per_ct": 950},
+            ] if sol_lot else [],
+        },
+    ]
+
+    names = {}
+    for kmi_def in kmi_list:
+        existing = frappe.db.get_value(
+            "Karigar Metal Issue", {"challan_no": kmi_def["challan_no"]}, "name"
+        )
+        if existing:
+            names[kmi_def["challan_no"]] = existing
+            continue
+
+        doc = frappe.get_doc({
+            "doctype": "Karigar Metal Issue",
+            "challan_no": kmi_def["challan_no"],
+            "karigar":    kmi_def["karigar"],
+            "dispatch_date": kmi_def["dispatch_date"],
+            "operation":  kmi_def["operation"],
+            "remarks":    _SEED_REMARK,
+            "metal_items": kmi_def["metal_items"],
+            "stone_items": kmi_def["stone_items"],
+        })
+        doc.insert(ignore_permissions=True)
+        try:
+            doc.submit()
+        except Exception as e:
+            frappe.logger().warning(f"[loupe24k seed] KMI submit failed for {kmi_def['challan_no']}: {e}")
+        names[kmi_def["challan_no"]] = doc.name
+
+    return names
+
+
+# ── Karigar Reconciliations ───────────────────────────────────────────────────
+
+def _seed_karigar_reconciliations(kmi_names):
+    """Settle all 5 seed KMIs, producing a mix of Pass / Warning / Fail verdicts.
+
+    Verdict derivation (wastage_allowance_pct = 2% for both karigar):
+      SEED/001 – Filing   Ramesh  – returned 48g + 1.0g scrap   → fine_loss 0.916 ≤ 0.917 → Pass
+      SEED/002 – Setting  Suresh  – returned 43g + 1.5g scrap   → fine_loss 0.459 ≤ 0.825 → Pass
+      SEED/003 – Casting  Ramesh  – returned 88.9g + 9.0g sprue → excess 0.090 ≤ 0.1      → Warning
+      SEED/004 – Polishing Ramesh – returned 38.5g + 1.0g dust  → fine_loss 0.458 ≤ 0.733 → Pass
+      SEED/005 – Setting  Suresh  – returned 18.5g 24K, 1 stone broken  → excess 1.1 > 0.1 → Fail
+    """
+    today = frappe.utils.today()
+
+    krec_list = [
+        {
+            "challan_no": "SEED/001",
+            "reconciliation_date": frappe.utils.add_months(today, -1),
+            "returned_items": [
+                {"item_code": "Ring - Plain Band 22K", "category": "Finished", "karat": "22K", "gross_wt": 48.0},
+                {"item_code": "Filing Scrap 22K",      "category": "Scrap",    "karat": "22K", "gross_wt": 1.0},
+            ],
+            "stones_set": 0, "stones_returned": 0, "stones_broken": 0,
+        },
+        {
+            "challan_no": "SEED/002",
+            "reconciliation_date": frappe.utils.add_months(today, -1),
+            "returned_items": [
+                {"item_code": "Ring - Solitaire 22K", "category": "Finished", "karat": "22K", "gross_wt": 43.0},
+                {"item_code": "Filing Scrap 22K",     "category": "Scrap",    "karat": "22K", "gross_wt": 1.5},
+            ],
+            "stones_set": 18, "stones_returned": 2, "stones_broken": 0,
+        },
+        {
+            "challan_no": "SEED/003",
+            "reconciliation_date": frappe.utils.add_months(today, -2),
+            "returned_items": [
+                {"item_code": "Ring Blank 22K",         "category": "Finished", "karat": "22K", "gross_wt": 88.9},
+                {"item_code": "Sprue/Button Scrap 22K", "category": "Scrap",    "karat": "22K", "gross_wt": 9.0},
+            ],
+            "stones_set": 0, "stones_returned": 0, "stones_broken": 0,
+        },
+        {
+            "challan_no": "SEED/004",
+            "reconciliation_date": frappe.utils.add_days(today, -7),
+            "returned_items": [
+                {"item_code": "Ring - Plain Band 22K", "category": "Finished", "karat": "22K", "gross_wt": 38.5},
+                {"item_code": "Polishing Dust 22K",    "category": "Scrap",    "karat": "22K", "gross_wt": 1.0},
+            ],
+            "stones_set": 0, "stones_returned": 0, "stones_broken": 0,
+        },
+        {
+            # Fail: 1.5g fine loss on 20g 24K → excess 1.1g; 1 solitaire broken (0 allowed)
+            "challan_no": "SEED/005",
+            "reconciliation_date": frappe.utils.add_days(today, -14),
+            "returned_items": [
+                {"item_code": "Ring - Plain Band 24K", "category": "Finished", "karat": "24K", "gross_wt": 18.5},
+            ],
+            "stones_set": 1, "stones_returned": 0, "stones_broken": 1,
+        },
+    ]
+
+    for krec_def in krec_list:
+        issue_ref = kmi_names.get(krec_def["challan_no"])
+        if not issue_ref:
+            continue
+        if frappe.db.get_value("Karigar Reconciliation", {"issue_ref": issue_ref}, "name"):
+            continue
+
+        doc = frappe.get_doc({
+            "doctype": "Karigar Reconciliation",
+            "issue_ref": issue_ref,
+            "reconciliation_date": krec_def["reconciliation_date"],
+            "remarks": _SEED_REMARK,
+            "returned_items": krec_def["returned_items"],
+            "stones_set":      krec_def["stones_set"],
+            "stones_returned": krec_def["stones_returned"],
+            "stones_broken":   krec_def["stones_broken"],
+        })
+        doc.insert(ignore_permissions=True)
+        try:
+            doc.submit()
+        except Exception as e:
+            frappe.logger().warning(f"[loupe24k seed] KREC submit failed for {issue_ref}: {e}")
+
+
+# ── Scrap Recovery Entries ────────────────────────────────────────────────────
+
+def _seed_scrap_recovery_entries():
+    """Create 5 submitted Scrap Recovery Entries covering Remelt and Refining types."""
+    if frappe.db.count("Scrap Recovery Entry",
+                        {"remarks": _SEED_REMARK, "docstatus": ["!=", 2]}) >= 5:
+        return
+
+    today = frappe.utils.today()
+    sre_list = [
+        {
+            "entry_date": frappe.utils.add_months(today, -3),
+            "refiner": "Anand Refinery",
+            "recovery_type": "Remelt",
+            "scrap_items": [
+                {"item_code": "Sprue/Button Scrap 22K", "scrap_type": "Sprue/Button",
+                 "gross_wt": 8.0, "karat": "22K"},
+            ],
+            "recovery_pct": 95,
+            "credit_posting": 1,
+        },
+        {
+            "entry_date": frappe.utils.add_months(today, -2),
+            "refiner": "Anand Refinery",
+            "recovery_type": "Refining",
+            "scrap_items": [
+                {"item_code": "Filing Scrap 22K", "scrap_type": "Filing Scrap",
+                 "gross_wt": 5.0, "karat": "22K"},
+            ],
+            "recovery_pct": 88,
+            "credit_posting": 0,
+        },
+        {
+            "entry_date": frappe.utils.add_months(today, -1),
+            "refiner": "Anand Refinery",
+            "recovery_type": "Remelt",
+            "scrap_items": [
+                {"item_code": "Sprue/Button Scrap 22K", "scrap_type": "Sprue/Button",
+                 "gross_wt": 4.0, "karat": "22K"},
+                {"item_code": "Filing Scrap 22K",       "scrap_type": "Filing Scrap",
+                 "gross_wt": 2.0, "karat": "22K"},
+            ],
+            "recovery_pct": 95,
+            "credit_posting": 1,
+        },
+        {
+            "entry_date": frappe.utils.add_days(today, -21),
+            "refiner": "Anand Refinery",
+            "recovery_type": "Refining",
+            "scrap_items": [
+                {"item_code": "Polishing Dust 22K", "scrap_type": "Polishing Dust",
+                 "gross_wt": 3.0, "karat": "22K"},
+            ],
+            "recovery_pct": 75,
+            "credit_posting": 0,
+        },
+        {
+            "entry_date": frappe.utils.add_days(today, -7),
+            "refiner": "Anand Refinery",
+            "recovery_type": "Remelt",
+            "scrap_items": [
+                {"item_code": "Sprue/Button Scrap 22K", "scrap_type": "Sprue/Button",
+                 "gross_wt": 12.0, "karat": "22K"},
+                {"item_code": "Filing Scrap 22K",       "scrap_type": "Filing Scrap",
+                 "gross_wt": 4.5, "karat": "22K"},
+                {"item_code": "Polishing Dust 22K",     "scrap_type": "Polishing Dust",
+                 "gross_wt": 1.5, "karat": "22K"},
+            ],
+            "recovery_pct": 92,
+            "credit_posting": 1,
+        },
+    ]
+
+    for sre_def in sre_list:
+        doc = frappe.get_doc({
+            "doctype": "Scrap Recovery Entry",
+            "entry_date":    sre_def["entry_date"],
+            "refiner":       sre_def["refiner"],
+            "recovery_type": sre_def["recovery_type"],
+            "recovery_pct":  sre_def["recovery_pct"],
+            "credit_posting": sre_def["credit_posting"],
+            "remarks":       _SEED_REMARK,
+            "scrap_items":   sre_def["scrap_items"],
+        })
+        doc.insert(ignore_permissions=True)
+        try:
+            doc.submit()
+        except Exception as e:
+            frappe.logger().warning(f"[loupe24k seed] SRE submit failed: {e}")
+
+
+# ── Fine Gold Ledger Entries ──────────────────────────────────────────────────
+
+def _seed_fine_gold_ledger_entries():
+    """Create 5 submitted Fine Gold Ledger Entries covering all entry types."""
+    if frappe.db.count("Fine Gold Ledger Entry",
+                        {"remarks": _SEED_REMARK, "docstatus": ["!=", 2]}) >= 5:
+        return
+
+    today = frappe.utils.today()
+    fgl_list = [
+        {
+            # Metal issued to karigar — corresponds to KMI-003 grain challan
+            "entry_type": "Issue",
+            "posting_date": frappe.utils.add_months(today, -3),
+            "party_type": "Supplier", "party": "Ramesh Karigar",
+            "item": "22K Gold Grain", "karat": "22K", "gross_wt": 100.0,
+        },
+        {
+            # Ring blanks received back after casting (KREC-003 settlement)
+            "entry_type": "Receipt",
+            "posting_date": frappe.utils.add_months(today, -2),
+            "party_type": "Supplier", "party": "Ramesh Karigar",
+            "item": "Ring Blank 22K", "karat": "22K", "gross_wt": 88.9,
+        },
+        {
+            # Casting sprue sent to refiner
+            "entry_type": "Scrap",
+            "posting_date": frappe.utils.add_months(today, -2),
+            "party_type": "Supplier", "party": "Anand Refinery",
+            "item": "Sprue/Button Scrap 22K", "karat": "22K", "gross_wt": 9.0,
+        },
+        {
+            # Fine gold credited after refining recovery
+            "entry_type": "Recovery",
+            "posting_date": frappe.utils.add_months(today, -1),
+            "party_type": "Supplier", "party": "Anand Refinery",
+            "item": "Pure Gold 24K", "karat": "24K", "gross_wt": 7.5,
+        },
+        {
+            # Unaccounted melt loss recorded
+            "entry_type": "Loss",
+            "posting_date": frappe.utils.add_days(today, -14),
+            "item": "22K Gold Grain", "karat": "22K", "gross_wt": 0.5,
+        },
+    ]
+
+    for fgl_def in fgl_list:
+        doc = frappe.get_doc({
+            "doctype": "Fine Gold Ledger Entry",
+            "entry_type":   fgl_def["entry_type"],
+            "posting_date": fgl_def["posting_date"],
+            "party_type":   fgl_def.get("party_type", ""),
+            "party":        fgl_def.get("party", ""),
+            "item":         fgl_def["item"],
+            "karat":        fgl_def["karat"],
+            "gross_wt":     fgl_def["gross_wt"],
+            "remarks":      _SEED_REMARK,
+        })
+        doc.insert(ignore_permissions=True)
+        try:
+            doc.submit()
+        except Exception as e:
+            frappe.logger().warning(f"[loupe24k seed] FGL submit failed ({fgl_def['entry_type']}): {e}")
+
+
+# ── Stone Ledger Entries ──────────────────────────────────────────────────────
+
+def _seed_stone_ledger_entries():
+    """Create 5 submitted Stone Ledger Entries covering all movement types."""
+    if frappe.db.count("Stone Ledger Entry",
+                        {"remarks": _SEED_REMARK, "docstatus": ["!=", 2]}) >= 5:
+        return
+
+    today = frappe.utils.today()
+    melee_lot = frappe.db.get_value("Stone Lot", {"lot_name": "MELEE-001"}, "name")
+    sol_lot   = frappe.db.get_value("Stone Lot", {"lot_name": "SOL-001"},   "name")
+
+    sle_list = [
+        {
+            # Melee diamonds issued to Suresh for setting (matches KMI-002)
+            "movement_type": "Issue",
+            "posting_date": frappe.utils.add_months(today, -2),
+            "party_type": "Supplier", "party": "Suresh Setter",
+            "stone_master": "Round Diamond", "stone_lot": melee_lot,
+            "pieces": 20, "carat": 0.50, "value": round(0.50 * 180, 2),
+        },
+        {
+            # 18 of those diamonds set into solitaire rings
+            "movement_type": "Set",
+            "posting_date": frappe.utils.add_months(today, -1),
+            "stone_master": "Round Diamond",
+            "pieces": 18, "carat": 0.45,
+        },
+        {
+            # Remaining 2 diamonds returned unused
+            "movement_type": "Return",
+            "posting_date": frappe.utils.add_months(today, -1),
+            "party_type": "Supplier", "party": "Suresh Setter",
+            "stone_master": "Round Diamond", "stone_lot": melee_lot,
+            "pieces": 2, "carat": 0.05, "value": round(0.05 * 180, 2),
+        },
+        {
+            # Certified solitaire issued to Suresh (matches KMI-005)
+            "movement_type": "Issue",
+            "posting_date": frappe.utils.add_months(today, -1),
+            "party_type": "Supplier", "party": "Suresh Setter",
+            "stone_master": "Certified Solitaire Diamond", "stone_lot": sol_lot,
+            "pieces": 1, "carat": 0.30, "value": round(0.30 * 950, 2),
+        },
+        {
+            # 1 melee stone broken during setting (KREC-005 records this)
+            "movement_type": "Broken",
+            "posting_date": frappe.utils.add_days(today, -14),
+            "stone_master": "Round Diamond",
+            "pieces": 1, "carat": 0.025,
+        },
+    ]
+
+    for sle_def in sle_list:
+        doc = frappe.get_doc({
+            "doctype": "Stone Ledger Entry",
+            "movement_type": sle_def["movement_type"],
+            "posting_date":  sle_def["posting_date"],
+            "party_type":    sle_def.get("party_type", ""),
+            "party":         sle_def.get("party", ""),
+            "stone_master":  sle_def["stone_master"],
+            "stone_lot":     sle_def.get("stone_lot") or "",
+            "pieces":        sle_def["pieces"],
+            "carat":         sle_def["carat"],
+            "value":         sle_def.get("value", 0),
+            "remarks":       _SEED_REMARK,
+        })
+        doc.insert(ignore_permissions=True)
+        try:
+            doc.submit()
+        except Exception as e:
+            frappe.logger().warning(
+                f"[loupe24k seed] SLE submit failed ({sle_def['movement_type']}): {e}"
+            )
+
+
+# ── Hallmarking Register ──────────────────────────────────────────────────────
+
+def _seed_hallmarking_entries():
+    """Create 5 submitted Hallmarking Register entries for finished rings."""
+    if frappe.db.count("Hallmarking Register",
+                        {"remarks": _SEED_REMARK, "docstatus": ["!=", 2]}) >= 5:
+        return
+
+    today = frappe.utils.today()
+    hmr_list = [
+        {
+            "hallmark_date": frappe.utils.add_days(today, -21),
+            "bis_centre": "BIS Hallmark Centre",
+            "item_code": "Ring - Plain Band 22K",
+            "huid": "AA1001", "purity": "22K (916)",
+            "gross_wt": 4.5, "stone_wt": None,
+        },
+        {
+            "hallmark_date": frappe.utils.add_days(today, -21),
+            "bis_centre": "BIS Hallmark Centre",
+            "item_code": "Ring - Solitaire 22K",
+            "huid": "AA1002", "purity": "22K (916)",
+            "gross_wt": 5.2, "stone_wt": 0.15,
+        },
+        {
+            "hallmark_date": frappe.utils.add_days(today, -14),
+            "bis_centre": "BIS Hallmark Centre",
+            "item_code": "Ring - Plain Band 24K",
+            "huid": "AA1003", "purity": "24K (999)",
+            "gross_wt": 4.0, "stone_wt": None,
+        },
+        {
+            "hallmark_date": frappe.utils.add_days(today, -7),
+            "bis_centre": "BIS Hallmark Centre",
+            "item_code": "Ring - Plain Band 22K",
+            "huid": "AA1004", "purity": "22K (916)",
+            "gross_wt": 4.8, "stone_wt": None,
+        },
+        {
+            "hallmark_date": frappe.utils.add_days(today, -3),
+            "bis_centre": "BIS Hallmark Centre",
+            "item_code": "Ring - Solitaire 22K",
+            "huid": "AA1005", "purity": "22K (916)",
+            "gross_wt": 5.5, "stone_wt": 0.20,
+        },
+    ]
+
+    for hmr_def in hmr_list:
+        doc = frappe.get_doc({
+            "doctype": "Hallmarking Register",
+            "hallmark_date": hmr_def["hallmark_date"],
+            "bis_centre":    hmr_def["bis_centre"],
+            "item_code":     hmr_def["item_code"],
+            "huid":          hmr_def["huid"],
+            "purity":        hmr_def["purity"],
+            "gross_wt":      hmr_def["gross_wt"],
+            "stone_wt":      hmr_def.get("stone_wt") or 0,
+            "remarks":       _SEED_REMARK,
+        })
+        doc.insert(ignore_permissions=True)
+        try:
+            doc.submit()
+        except Exception as e:
+            frappe.logger().warning(
+                f"[loupe24k seed] HMR submit failed ({hmr_def['huid']}): {e}"
+            )
+
+
 # ── Workspace ─────────────────────────────────────────────────────────────────
 
 def _seed_workspace():
-    """Create (or replace) the Loupe 24K workspace with all standalone DocTypes."""
+    """Create (or replace) the Loupe 24K workspace with all DocTypes, then hide others."""
     import json as _json
     ws_label = "Loupe 24K"
 
@@ -647,10 +1382,30 @@ def _seed_workspace():
         frappe.delete_doc("Workspace", ws_label, ignore_permissions=True, force=True)
 
     shortcuts = [
+        # ── Masters ───────────────────────────────────────────────────────────
         {"type": "DocType", "label": "Metal Rate",             "link_to": "Metal Rate",             "color": "#FFB300"},
+        {"type": "DocType", "label": "Stone Master",           "link_to": "Stone Master",           "color": "#EC407A"},
+        {"type": "DocType", "label": "Stone Lot",              "link_to": "Stone Lot",              "color": "#26A69A"},
+        {"type": "DocType", "label": "Item",                   "link_to": "Item",                   "color": "#66BB6A"},
+        {"type": "DocType", "label": "Supplier",               "link_to": "Supplier",               "color": "#8D6E63"},
+        # ── Karigar Operations ────────────────────────────────────────────────
         {"type": "DocType", "label": "Karigar Metal Issue",    "link_to": "Karigar Metal Issue",    "color": "#FF7043"},
         {"type": "DocType", "label": "Karigar Reconciliation", "link_to": "Karigar Reconciliation", "color": "#7E57C2"},
-        {"type": "DocType", "label": "Stone Lot",              "link_to": "Stone Lot",              "color": "#26A69A"},
+        # ── Manufacturing ─────────────────────────────────────────────────────
+        {"type": "DocType", "label": "BOM",                    "link_to": "BOM",                    "color": "#29B6F6"},
+        {"type": "DocType", "label": "Work Order",             "link_to": "Work Order",             "color": "#1E88E5"},
+        {"type": "DocType", "label": "Stock Entry",            "link_to": "Stock Entry",            "color": "#AB47BC"},
+        {"type": "DocType", "label": "Job Card",               "link_to": "Job Card",               "color": "#F06292"},
+        {"type": "DocType", "label": "Serial No",              "link_to": "Serial No",              "color": "#4DB6AC"},
+        # ── Sales ─────────────────────────────────────────────────────────────
+        {"type": "DocType", "label": "Quotation",              "link_to": "Quotation",              "color": "#9CCC65"},
+        {"type": "DocType", "label": "Sales Invoice",          "link_to": "Sales Invoice",          "color": "#EF5350"},
+        # ── Scrap & Hallmarking ───────────────────────────────────────────────
+        {"type": "DocType", "label": "Scrap Recovery Entry",   "link_to": "Scrap Recovery Entry",   "color": "#78909C"},
+        {"type": "DocType", "label": "Hallmarking Register",   "link_to": "Hallmarking Register",   "color": "#5C6BC0"},
+        # ── Ledgers ───────────────────────────────────────────────────────────
+        {"type": "DocType", "label": "Fine Gold Ledger Entry", "link_to": "Fine Gold Ledger Entry", "color": "#FF8F00"},
+        {"type": "DocType", "label": "Stone Ledger Entry",     "link_to": "Stone Ledger Entry",     "color": "#00BCD4"},
     ]
 
     links = [
@@ -659,11 +1414,26 @@ def _seed_workspace():
         {"type": "Link", "label": "Metal Rate",   "link_to": "Metal Rate",   "link_type": "DocType", "onboard": 1},
         {"type": "Link", "label": "Stone Master", "link_to": "Stone Master", "link_type": "DocType", "onboard": 1},
         {"type": "Link", "label": "Stone Lot",    "link_to": "Stone Lot",    "link_type": "DocType", "onboard": 1},
+        {"type": "Link", "label": "Item",         "link_to": "Item",         "link_type": "DocType", "onboard": 1},
+        {"type": "Link", "label": "Supplier",     "link_to": "Supplier",     "link_type": "DocType", "onboard": 1},
 
         # ── Karigar Operations card ───────────────────────────────────────────
         {"type": "Card Break", "label": "Karigar Operations"},
         {"type": "Link", "label": "Karigar Metal Issue",    "link_to": "Karigar Metal Issue",    "link_type": "DocType", "onboard": 1},
         {"type": "Link", "label": "Karigar Reconciliation", "link_to": "Karigar Reconciliation", "link_type": "DocType", "onboard": 1},
+
+        # ── Manufacturing card ────────────────────────────────────────────────
+        {"type": "Card Break", "label": "Manufacturing"},
+        {"type": "Link", "label": "BOM",        "link_to": "BOM",        "link_type": "DocType", "onboard": 1},
+        {"type": "Link", "label": "Work Order", "link_to": "Work Order", "link_type": "DocType", "onboard": 1},
+        {"type": "Link", "label": "Stock Entry","link_to": "Stock Entry","link_type": "DocType", "onboard": 0},
+        {"type": "Link", "label": "Job Card",   "link_to": "Job Card",   "link_type": "DocType", "onboard": 0},
+        {"type": "Link", "label": "Serial No",  "link_to": "Serial No",  "link_type": "DocType", "onboard": 0},
+
+        # ── Sales card ────────────────────────────────────────────────────────
+        {"type": "Card Break", "label": "Sales"},
+        {"type": "Link", "label": "Quotation",     "link_to": "Quotation",     "link_type": "DocType", "onboard": 1},
+        {"type": "Link", "label": "Sales Invoice", "link_to": "Sales Invoice", "link_type": "DocType", "onboard": 1},
 
         # ── Scrap & Hallmarking card ──────────────────────────────────────────
         {"type": "Card Break", "label": "Scrap & Hallmarking"},
@@ -672,17 +1442,19 @@ def _seed_workspace():
 
         # ── Ledgers card ──────────────────────────────────────────────────────
         {"type": "Card Break", "label": "Ledgers"},
-        {"type": "Link", "label": "Stone Ledger Entry",     "link_to": "Stone Ledger Entry",     "link_type": "DocType", "onboard": 0},
         {"type": "Link", "label": "Fine Gold Ledger Entry", "link_to": "Fine Gold Ledger Entry", "link_type": "DocType", "onboard": 0},
+        {"type": "Link", "label": "Stone Ledger Entry",     "link_to": "Stone Ledger Entry",     "link_type": "DocType", "onboard": 0},
     ]
 
     # content tells Frappe v15 how to lay out the cards on the workspace page.
     # Each entry's card_name must match the label of a Card Break entry in links.
     content = _json.dumps([
-        {"id": "l24k-masters",     "type": "card", "data": {"card_name": "Masters",             "col": 4}},
-        {"id": "l24k-karigar-ops", "type": "card", "data": {"card_name": "Karigar Operations",  "col": 4}},
-        {"id": "l24k-scrap-hall",  "type": "card", "data": {"card_name": "Scrap & Hallmarking", "col": 4}},
-        {"id": "l24k-ledgers",     "type": "card", "data": {"card_name": "Ledgers",             "col": 4}},
+        {"id": "l24k-masters",        "type": "card", "data": {"card_name": "Masters",             "col": 4}},
+        {"id": "l24k-karigar-ops",    "type": "card", "data": {"card_name": "Karigar Operations",  "col": 4}},
+        {"id": "l24k-manufacturing",  "type": "card", "data": {"card_name": "Manufacturing",        "col": 4}},
+        {"id": "l24k-sales",          "type": "card", "data": {"card_name": "Sales",               "col": 4}},
+        {"id": "l24k-scrap-hall",     "type": "card", "data": {"card_name": "Scrap & Hallmarking", "col": 4}},
+        {"id": "l24k-ledgers",        "type": "card", "data": {"card_name": "Ledgers",             "col": 4}},
     ])
 
     doc = frappe.get_doc({
@@ -698,3 +1470,7 @@ def _seed_workspace():
         "links": links,
     })
     doc.insert(ignore_permissions=True)
+
+    # Hide every other workspace so only Loupe 24K is visible in the sidebar.
+    from loupe24k.setup.install import _hide_other_workspaces
+    _hide_other_workspaces()

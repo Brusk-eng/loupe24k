@@ -120,3 +120,65 @@ class TestOnSubmit(unittest.TestCase):
         doc.on_submit()
         self.assertEqual(doc.status, "Issued")
         doc.db_set.assert_called_once_with("status", "Issued")
+
+
+class TestSeedScenarios(unittest.TestCase):
+    """
+    Verify _calc_totals() output for the five KMI seed scenarios defined in
+    data/seed_data.py _seed_karigar_metal_issues().
+    """
+
+    def test_seed_001_filing_ramesh(self):
+        # Ring Blank 22K: 50g → fine = 45.835g; no stones
+        doc = _doc(
+            metal_items=[_metal_row(50.0, round(50.0 * 0.9167, 3))],
+            stone_items=[],
+        )
+        doc._calc_totals()
+        self.assertAlmostEqual(doc.total_gross_wt, 50.0)
+        self.assertAlmostEqual(doc.total_fine_wt, round(50.0 * 0.9167, 3))
+        self.assertEqual(doc.total_stone_pieces, 0)
+
+    def test_seed_002_setting_suresh_with_stones(self):
+        # Plain Band 22K: 45g + Round Diamond 20 pcs, 0.50 ct
+        doc = _doc(
+            metal_items=[_metal_row(45.0, round(45.0 * 0.9167, 3))],
+            stone_items=[_stone_row(20, 0.50)],
+        )
+        doc._calc_totals()
+        self.assertAlmostEqual(doc.total_gross_wt, 45.0)
+        self.assertAlmostEqual(doc.total_fine_wt, round(45.0 * 0.9167, 3))
+        self.assertEqual(doc.total_stone_pieces, 20)
+        self.assertAlmostEqual(doc.total_stone_carat, 0.50)
+
+    def test_seed_003_casting_ramesh(self):
+        # 22K Gold Grain: 100g → fine = 91.670g; no stones
+        doc = _doc(
+            metal_items=[_metal_row(100.0, round(100.0 * 0.9167, 3))],
+            stone_items=[],
+        )
+        doc._calc_totals()
+        self.assertAlmostEqual(doc.total_gross_wt, 100.0)
+        self.assertAlmostEqual(doc.total_fine_wt, round(100.0 * 0.9167, 3))
+
+    def test_seed_004_polishing_ramesh(self):
+        # Plain Band 22K: 40g → fine = 36.668g; no stones
+        doc = _doc(
+            metal_items=[_metal_row(40.0, round(40.0 * 0.9167, 3))],
+            stone_items=[],
+        )
+        doc._calc_totals()
+        self.assertAlmostEqual(doc.total_gross_wt, 40.0)
+        self.assertAlmostEqual(doc.total_fine_wt, round(40.0 * 0.9167, 3))
+
+    def test_seed_005_setting_suresh_24k_with_solitaire(self):
+        # Plain Band 24K: 20g (touch = 1.0) + Certified Solitaire 1 pc, 0.30 ct
+        doc = _doc(
+            metal_items=[_metal_row(20.0, 20.0)],   # 24K touch = 1.0
+            stone_items=[_stone_row(1, 0.30)],
+        )
+        doc._calc_totals()
+        self.assertAlmostEqual(doc.total_gross_wt, 20.0)
+        self.assertAlmostEqual(doc.total_fine_wt, 20.0)
+        self.assertEqual(doc.total_stone_pieces, 1)
+        self.assertAlmostEqual(doc.total_stone_carat, 0.30)

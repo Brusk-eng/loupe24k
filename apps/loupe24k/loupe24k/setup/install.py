@@ -3,10 +3,25 @@ import frappe
 
 def after_install():
     _create_custom_fields()
+    _hide_other_workspaces()
 
 
 def after_migrate():
     _create_custom_fields()
+    _hide_other_workspaces()
+
+
+def _hide_other_workspaces():
+    """Hide all standard ERPNext workspaces so only Loupe 24K is visible."""
+    others = frappe.get_all(
+        "Workspace",
+        filters={"name": ["!=", "Loupe 24K"]},
+        pluck="name",
+    )
+    for ws in others:
+        frappe.db.set_value("Workspace", ws, "is_hidden", 1)
+    if others:
+        frappe.db.commit()
 
 
 def _create_custom_fields():
