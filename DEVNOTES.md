@@ -280,7 +280,7 @@ make bench CMD="--site loupe24k.localhost execute loupe24k.data.seed_data.seed"
 
 | Section | What gets created |
 |---|---|
-| Company | Loupe 24K (`L24K`) with Standard CoA, Indian FY, Global Defaults, Stock Settings — skipped if a company already exists. Creates Warehouse Type `Transit` first (needed for Goods In Transit). |
+| Company | Loupe 24K (`L24K`) with Standard CoA, US FY (Jan–Dec), USD as base currency, Global Defaults, Stock Settings — skipped if a company already exists. Creates Warehouse Type `Transit` first (needed for Goods In Transit). |
 | UOMs | Gram, Milligram, Carat, Piece, Cent |
 | Item Groups | Raw Metal, WIP-Metal, Finished Jewellery, Stones, Recoverable Scrap, Refinable Scrap, Consumables |
 | Item Attributes | Karat, Ring Design, Ring Size, Stone Shape, Stone Quality |

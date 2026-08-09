@@ -42,7 +42,7 @@
   {
    "fieldname": "rate_per_g",
    "fieldtype": "Currency",
-   "label": "Rate per Gram (INR)",
+   "label": "Rate per Gram (USD)",
    "reqd": 1
   },
   {

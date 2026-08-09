@@ -30,7 +30,7 @@ The core idea behind Loupe 24K is that a jewellery business runs three parallel 
 
 | Ledger | Unit | What it tracks |
 |---|---|---|
-| **Money** | INR | Standard ERPNext stock + accounting — untouched |
+| **Money** | USD | Standard ERPNext stock + accounting — untouched |
 | **Fine Gold** | Grams (fine) | Gross weight × touch factor at every transaction |
 | **Stones** | Carats + pieces | Diamonds and gemstones, tracked separately from metal |
 
@@ -50,7 +50,7 @@ A separate sub-ledger for diamonds and gemstones measured in carats and pieces. 
 Daily karat-wise rates with auto-derivation (22K and 18K derive from the 24K master via touch). Invoice price build-up: fine gold value + making charges + wastage + stone value + hallmarking, with split GST (3% gold, 5% services).
 
 ### Multi-Currency Support
-Transact in any currency — USD, AED, GBP, EUR, or custom. Metal rates and stone values are recorded in the base currency (INR) and converted at the exchange rate in effect at the time of invoice. Wholesale export orders, overseas karigar settlements, and international stone purchases all post to the correct ledger in both the transaction currency and the base currency. Exchange gain/loss entries are generated automatically on settlement.
+Transact in any currency — AED, GBP, EUR, INR, or custom. Metal rates and stone values are recorded in the base currency (USD) and converted at the exchange rate in effect at the time of invoice. Wholesale export orders, overseas karigar settlements, and international stone purchases all post to the correct ledger in both the transaction currency and the base currency. Exchange gain/loss entries are generated automatically on settlement.
 
 ### Karigar / Job Work Management
 Formal job-work challans (ITC-04 compliant) issue metal and stones to artisans. A 1-year return clock enforces CGST Section 143. Reconciliation compares returned fine gold against a per-karigar wastage allowance (default 2%) and flags excess loss.

@@ -4,8 +4,8 @@ import frappe
 # Seed company used when the ERPNext setup wizard never ran.
 _COMPANY_NAME = "Loupe 24K"
 _COMPANY_ABBR = "L24K"
-_COMPANY_COUNTRY = "India"
-_COMPANY_CURRENCY = "INR"
+_COMPANY_COUNTRY = "United States"
+_COMPANY_CURRENCY = "USD"
 
 
 # ── Root-node helpers ─────────────────────────────────────────────────────────
@@ -186,7 +186,7 @@ def _set_global_defaults(company):
 
 
 def _ensure_fiscal_year():
-    """Create the current Indian FY (Apr–Mar) if no FY covers today."""
+    """Create the current US FY (Jan–Dec) if no FY covers today."""
     today = frappe.utils.today()
     if frappe.db.exists(
         "Fiscal Year",
@@ -195,16 +195,16 @@ def _ensure_fiscal_year():
         return
 
     today_date = frappe.utils.getdate(today)
-    start_year = today_date.year - 1 if today_date.month < 4 else today_date.year
-    year_name = f"{start_year}-{start_year + 1}"
+    year = today_date.year
+    year_name = str(year)
     if frappe.db.exists("Fiscal Year", year_name):
         return
 
     frappe.get_doc({
         "doctype": "Fiscal Year",
         "year": year_name,
-        "year_start_date": f"{start_year}-04-01",
-        "year_end_date": f"{start_year + 1}-03-31",
+        "year_start_date": f"{year}-01-01",
+        "year_end_date": f"{year}-12-31",
     }).insert(ignore_permissions=True)
 
 
@@ -554,7 +554,7 @@ def _seed_stone_lots():
             "tracking_type": "Lot",
             "total_pieces": 30,
             "total_carat": 0.75,
-            "rate_per_ct": 15000,
+            "rate_per_ct": 180,
         },
         {
             "lot_name": "SOL-001",
@@ -564,7 +564,7 @@ def _seed_stone_lots():
             "total_carat": 0.30,
             "cert_no": "GIA-123456",
             "cert_lab": "GIA",
-            "rate_per_ct": 80000,
+            "rate_per_ct": 950,
         },
     ]
     for lot in lots:
@@ -577,8 +577,8 @@ def _seed_stone_lots():
 
 def _seed_suppliers():
     suppliers = [
-        {"supplier_name": "Ramesh Karigar", "is_karigar": 1, "wastage_allowance_pct": 2.0, "making_rate": 350},
-        {"supplier_name": "Suresh Setter",  "is_karigar": 1, "breakage_allowance_pct": 5.0, "making_rate": 500},
+        {"supplier_name": "Ramesh Karigar", "is_karigar": 1, "wastage_allowance_pct": 2.0, "making_rate": 4},
+        {"supplier_name": "Suresh Setter",  "is_karigar": 1, "breakage_allowance_pct": 5.0, "making_rate": 6},
         {"supplier_name": "Anand Refinery",      "is_karigar": 0},
         {"supplier_name": "BIS Hallmark Centre", "is_karigar": 0},
         {"supplier_name": "Mumbai Bullion House", "is_karigar": 0},
@@ -629,7 +629,7 @@ def _seed_metal_rates():
             "doctype": "Metal Rate",
             "date": today,
             "karat": "24K",
-            "rate_per_g": 6200,
+            "rate_per_g": 100,
         })
         doc.insert(ignore_permissions=True)
 
