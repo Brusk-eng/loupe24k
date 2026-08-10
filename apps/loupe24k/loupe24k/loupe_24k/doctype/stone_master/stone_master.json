@@ -31,6 +31,7 @@
   {
    "fieldname": "stone_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Stone Type",
    "options": "Diamond\nRuby\nEmerald\nSapphire\nOther",
    "reqd": 1
@@ -38,6 +39,7 @@
   {
    "fieldname": "shape",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Shape",
    "options": "Round\nPrincess\nOval\nMarquise\nCushion\nOther"
   },

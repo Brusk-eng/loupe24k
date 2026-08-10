@@ -47,6 +47,7 @@
   {
    "fieldname": "issue_ref",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Job Work Challan",
    "options": "Karigar Metal Issue",
    "reqd": 1
@@ -55,6 +56,7 @@
    "fetch_from": "issue_ref.karigar",
    "fieldname": "karigar",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Karigar",
    "options": "Supplier",
    "read_only": 1
@@ -67,6 +69,7 @@
    "default": "Today",
    "fieldname": "reconciliation_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Reconciliation Date",
    "reqd": 1
   },
@@ -211,6 +214,7 @@
   {
    "fieldname": "verdict",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Verdict",
    "options": "Pass\nWarning\nFail",
    "read_only": 1

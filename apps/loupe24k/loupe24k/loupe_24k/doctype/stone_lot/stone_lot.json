@@ -34,12 +34,14 @@
   {
    "fieldname": "lot_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Lot / Certificate No",
    "reqd": 1
   },
   {
    "fieldname": "stone_master",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Stone Master",
    "options": "Stone Master",
    "reqd": 1
@@ -65,11 +67,13 @@
   {
    "fieldname": "total_pieces",
    "fieldtype": "Int",
+   "in_list_view": 1,
    "label": "Total Pieces"
   },
   {
    "fieldname": "total_carat",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Total Carats",
    "precision": "3"
   },

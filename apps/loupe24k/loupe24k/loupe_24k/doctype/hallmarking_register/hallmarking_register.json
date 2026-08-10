@@ -31,6 +31,7 @@
    "default": "Today",
    "fieldname": "hallmark_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Hallmark Date",
    "reqd": 1
   },
@@ -53,6 +54,7 @@
   {
    "fieldname": "item_code",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Item Code",
    "options": "Item"
   },
@@ -65,12 +67,14 @@
    "description": "Hallmark Unique ID from BIS",
    "fieldname": "huid",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "HUID (6-digit)",
    "reqd": 1
   },
   {
    "fieldname": "purity",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Purity",
    "options": "24K (999)\n22K (916)\n18K (750)",
    "reqd": 1
@@ -82,6 +86,7 @@
   {
    "fieldname": "gross_wt",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Gross Weight (g)",
    "precision": "3",
    "reqd": 1

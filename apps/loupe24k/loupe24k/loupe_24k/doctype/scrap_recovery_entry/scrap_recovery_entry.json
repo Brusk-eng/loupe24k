@@ -33,12 +33,14 @@
    "default": "Today",
    "fieldname": "entry_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Entry Date",
    "reqd": 1
   },
   {
    "fieldname": "refiner",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Refiner / Goldsmith",
    "options": "Supplier"
   },
@@ -49,6 +51,7 @@
   {
    "fieldname": "recovery_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Recovery Type",
    "options": "Remelt\nRefining",
    "reqd": 1
@@ -102,6 +105,7 @@
   {
    "fieldname": "fine_recovered",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Fine Gold Recovered (g)",
    "precision": "3",
    "read_only": 1

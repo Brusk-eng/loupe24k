@@ -25,12 +25,14 @@
    "default": "Today",
    "fieldname": "date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Date",
    "reqd": 1
   },
   {
    "fieldname": "karat",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Karat",
    "options": "24K\n22K\n18K",
    "reqd": 1
@@ -42,6 +44,7 @@
   {
    "fieldname": "rate_per_g",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "Rate per Gram (USD)",
    "reqd": 1
   },

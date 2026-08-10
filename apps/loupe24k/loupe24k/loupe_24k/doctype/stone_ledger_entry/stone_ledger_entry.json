@@ -35,6 +35,7 @@
   {
    "fieldname": "movement_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Movement Type",
    "options": "Issue\nSet\nReturn\nBroken",
    "reqd": 1
@@ -43,6 +44,7 @@
    "default": "Today",
    "fieldname": "posting_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Posting Date",
    "reqd": 1
   },
@@ -97,6 +99,7 @@
   {
    "fieldname": "stone_master",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Stone Master",
    "options": "Stone Master",
    "reqd": 1
@@ -114,12 +117,14 @@
   {
    "fieldname": "pieces",
    "fieldtype": "Int",
+   "in_list_view": 1,
    "label": "Pieces",
    "reqd": 1
   },
   {
    "fieldname": "carat",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Carat",
    "precision": "3",
    "reqd": 1

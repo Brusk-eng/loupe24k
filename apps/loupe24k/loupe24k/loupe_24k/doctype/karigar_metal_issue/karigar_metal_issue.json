@@ -41,12 +41,14 @@
   {
    "fieldname": "challan_no",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Challan No",
    "reqd": 1
   },
   {
    "fieldname": "karigar",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Karigar / Setter",
    "options": "Supplier",
    "reqd": 1
@@ -59,6 +61,7 @@
    "default": "Today",
    "fieldname": "dispatch_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Dispatch Date",
    "reqd": 1
   },
@@ -70,6 +73,7 @@
   {
    "fieldname": "operation",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Operation",
    "options": "Filing\nPolishing\nSetting\nCasting\nOther"
   },
@@ -165,6 +169,7 @@
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
    "options": "Draft\nIssued\nPartially Returned\nReconciled\nCancelled",
    "read_only": 1
