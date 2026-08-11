@@ -124,6 +124,14 @@ def seed():
     frappe.db.commit()
     frappe.logger().info("[loupe24k seed] Customers done")
 
+    lead_names = _seed_crm_leads()
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] CRM Leads done")
+
+    _seed_crm_opportunities(lead_names)
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] CRM Opportunities done")
+
     _seed_metal_rates()
     frappe.db.commit()
     frappe.logger().info("[loupe24k seed] Metal Rates done")
@@ -151,6 +159,18 @@ def seed():
     _seed_hallmarking_entries()
     frappe.db.commit()
     frappe.logger().info("[loupe24k seed] Hallmarking Entries done")
+
+    _seed_sales_orders()
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Sales Orders done")
+
+    _seed_quotations()
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Quotations done")
+
+    _seed_print_formats()
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Print Formats done")
 
     _seed_workspace()
     frappe.db.commit()
@@ -507,9 +527,10 @@ def _seed_boms(company):
     Manufacturing chain:
       Pure Gold 24K + Silver Alloy → 22K Gold Grain (Alloying)
       22K Gold Grain                → Ring Blank 22K (Casting)
-      Ring Blank 22K                → Ring - Plain Band 22K (Jewellery Finishing)
-      Ring Blank 22K                → Ring - Solitaire 22K  (Stone Setting Finish)
-      Pure Gold 24K                 → Ring - Plain Band 24K (Cast & Finish)
+      Ring Blank 22K                → Ring - Plain Band 22K  (Jewellery Finishing)
+      Ring Blank 22K                → Ring - Melee Band 22K  (Stone Setting Finish)
+      Ring Blank 22K                → Ring - Solitaire 22K   (Stone Setting Finish)
+      Pure Gold 24K                 → Ring - Plain Band 24K  (Cast & Finish)
     """
     boms = [
         {
@@ -556,6 +577,23 @@ def _seed_boms(company):
             "custom": {
                 "target_touch": "22K",
                 "wastage_pct": 1.5,
+                "scrap_by_products": "Filing Scrap 22K, Polishing Dust 22K",
+            },
+        },
+        {
+            # Melee band: file, pavé-set scattered small diamonds, then polish.
+            # Many small stones → slightly higher setting loss than a plain band
+            # but lower than a solitaire (no single large stone to seat precisely).
+            "item": "Ring - Melee Band 22K",
+            "quantity": 4.5,
+            "routing": "Stone Setting Finish",
+            "items": [
+                {"item_code": "Ring Blank 22K", "qty": 5.0},
+            ],
+            "custom": {
+                "target_touch": "22K",
+                "wastage_pct": 1.5,
+                "expected_setting_loss_pct": 1.5,
                 "scrap_by_products": "Filing Scrap 22K, Polishing Dust 22K",
             },
         },
@@ -727,6 +765,59 @@ def _seed_items(company):
             "stock_uom": "Gram",
             "valuation_method": "Moving Average",
         },
+        {
+            # Pavé / channel-set band with scattered melee diamonds — distinct
+            # from Ring - Plain Band 22K (no stones) and Ring - Solitaire 22K
+            # (single large center stone).
+            "item_code": "Ring - Melee Band 22K",
+            "item_name": "Ring - Melee Band 22K",
+            "item_group": "Finished Jewellery",
+            "stock_uom": "Gram",
+            "valuation_method": "Moving Average",
+            "karat": "22K",
+        },
+        # ── Finished jewellery pieces sold by unit (Piece UOM) ───────────────
+        # These items represent the retail product line shown on customer invoices.
+        # stock_uom=Piece because retail qty is always in units, not grams.
+        # Actual gold weight is captured via the gross_wt custom field per sale line.
+        {
+            "item_code": "Bangle - Floral 22K",
+            "item_name": "Bangle - Floral 22K",
+            "item_group": "Finished Jewellery",
+            "stock_uom": "Piece",
+            "valuation_method": "Moving Average",
+            "karat": "22K",
+            "metal_type": "Gold",
+        },
+        {
+            "item_code": "Necklace - Traditional 22K",
+            "item_name": "Necklace - Traditional 22K",
+            "item_group": "Finished Jewellery",
+            "stock_uom": "Piece",
+            "valuation_method": "Moving Average",
+            "karat": "22K",
+            "metal_type": "Gold",
+        },
+        {
+            "item_code": "Earrings - Stud 22K",
+            "item_name": "Earrings - Stud 22K",
+            "item_group": "Finished Jewellery",
+            "stock_uom": "Piece",
+            "valuation_method": "Moving Average",
+            "karat": "22K",
+            "metal_type": "Gold",
+        },
+        {
+            # 18K is standard for diamond jewellery — harder alloy holds stone settings better.
+            "item_code": "Ring - Diamond 18K",
+            "item_name": "Ring - Diamond 18K",
+            "item_group": "Finished Jewellery",
+            "stock_uom": "Piece",
+            "valuation_method": "Moving Average",
+            "karat": "18K",
+            "metal_type": "Gold",
+            "touch": 0.7500,
+        },
     ]
 
     # Custom fields that may not be present yet — use db_set after insert
@@ -771,6 +862,13 @@ def _seed_stone_masters():
             "stone_type": "Diamond",
             "shape": "Round",
             "tracking_type": "Serial",
+        },
+        {
+            # CZ / Synthetic stones used in necklaces and budget jewellery
+            "stone_name": "CZ Synthetic Stone",
+            "stone_type": "Other",
+            "shape": "Round",
+            "tracking_type": "Lot",
         },
     ]
     for stone in stones:
@@ -840,6 +938,8 @@ def _seed_suppliers():
 def _seed_customers():
     customers = [
         {"customer_name": "Rajwadi Jewellers"},
+        {"customer_name": "Goldfield Exports Pvt Ltd"},
+        {"customer_name": "Premium Jewels Mumbai"},
     ]
     root_customer_group = _ensure_tree_root("Customer Group")
     root_territory = _ensure_tree_root("Territory")
@@ -858,15 +958,22 @@ def _seed_customers():
 # ── Metal Rates ───────────────────────────────────────────────────────────────
 
 def _seed_metal_rates():
+    """Seed today's gold rates for all three karats.
+
+    22K and 18K are derived from the 24K base rate (100 USD/g):
+      22K = 100 × 0.9167 = 91.67 USD/g
+      18K = 100 × 0.7500 = 75.00 USD/g
+    """
     today = frappe.utils.today()
-    if not frappe.db.exists("Metal Rate", {"date": today, "karat": "24K"}):
-        doc = frappe.get_doc({
-            "doctype": "Metal Rate",
-            "date": today,
-            "karat": "24K",
-            "rate_per_g": 100,
-        })
-        doc.insert(ignore_permissions=True)
+    rates = [
+        {"karat": "24K", "rate_per_g": 100.00},
+        {"karat": "22K", "rate_per_g":  91.67, "derived_from_24k": 1},
+        {"karat": "18K", "rate_per_g":  75.00, "derived_from_24k": 1},
+    ]
+    for r in rates:
+        if not frappe.db.exists("Metal Rate", {"date": today, "karat": r["karat"]}):
+            doc = frappe.get_doc({"doctype": "Metal Rate", "date": today, **r})
+            doc.insert(ignore_permissions=True)
 
 
 # ── Transaction seed constants ────────────────────────────────────────────────
@@ -1369,6 +1476,1341 @@ def _seed_hallmarking_entries():
             )
 
 
+# ── CRM Leads ─────────────────────────────────────────────────────────────────
+
+def _seed_lead_sources():
+    """Ensure the Lead Source records used by seed leads exist."""
+    sources = ["Word of Mouth", "Trade Show", "Website"]
+    for src in sources:
+        if not frappe.db.exists("Lead Source", src):
+            frappe.get_doc({
+                "doctype": "Lead Source",
+                "source_name": src,
+            }).insert(ignore_permissions=True)
+
+
+def _seed_crm_leads():
+    """Create sample CRM Leads representing prospective jewellery buyers.
+
+    Returns a dict {email_id: doc.name} so _seed_crm_opportunities can link
+    to the correct Lead document names.
+    """
+    _seed_lead_sources()
+
+    leads = [
+        {
+            # Individual customer — wedding jewellery inquiry, already quoted
+            "lead_name": "Nisha Agarwal",
+            "email_id": "nisha.agarwal@gmail.com",
+            "mobile_no": "+91 98765 11111",
+            "status": "Opportunity",
+            "source": "Word of Mouth",
+        },
+        {
+            # B2B contact — bulk export inquiry, quotation in progress
+            "lead_name": "Rahul Verma",
+            "company_name": "Goldfield Exports Pvt Ltd",
+            "email_id": "rahul.verma@goldfield-exports.com",
+            "mobile_no": "+91 22 6789 0000",
+            "status": "Quotation",
+            "source": "Trade Show",
+        },
+        {
+            # Individual — custom solitaire, early stage
+            "lead_name": "Divya Mehta",
+            "email_id": "divya.mehta@outlook.com",
+            "mobile_no": "+91 99887 22222",
+            "status": "Open",
+            "source": "Website",
+        },
+    ]
+
+    lead_names = {}
+    for lead_data in leads:
+        existing = frappe.db.get_value("Lead", {"email_id": lead_data["email_id"]}, "name")
+        if existing:
+            lead_names[lead_data["email_id"]] = existing
+            continue
+        doc = frappe.get_doc({"doctype": "Lead", **lead_data})
+        doc.insert(ignore_permissions=True)
+        lead_names[lead_data["email_id"]] = doc.name
+
+    return lead_names
+
+
+# ── CRM Opportunities ──────────────────────────────────────────────────────────
+
+def _seed_crm_opportunities(lead_names):
+    """Create CRM Opportunities linked to the seeded Leads."""
+    today = frappe.utils.today()
+
+    opportunities = [
+        {
+            "opportunity_from": "Lead",
+            "party_name": lead_names.get("nisha.agarwal@gmail.com"),
+            "opportunity_type": "Sales",
+            "status": "Quotation",
+            "expected_closing": frappe.utils.add_days(today, 30),
+            # title / detail fields vary across ERPNext versions — use notes
+        },
+        {
+            "opportunity_from": "Lead",
+            "party_name": lead_names.get("rahul.verma@goldfield-exports.com"),
+            "opportunity_type": "Sales",
+            "status": "Open",
+            "expected_closing": frappe.utils.add_days(today, 45),
+        },
+    ]
+
+    for opp_data in opportunities:
+        if not opp_data["party_name"]:
+            continue
+        if frappe.db.get_value(
+            "Opportunity",
+            {"party_name": opp_data["party_name"], "opportunity_type": "Sales"},
+            "name",
+        ):
+            continue
+        doc = frappe.get_doc({"doctype": "Opportunity", **opp_data})
+        try:
+            doc.insert(ignore_permissions=True, ignore_links=True)
+        except Exception as e:
+            frappe.logger().warning(
+                f"[loupe24k seed] Opportunity insert failed for {opp_data['party_name']}: {e}"
+            )
+
+
+# ── Sales Orders ───────────────────────────────────────────────────────────────
+
+def _ensure_price_lists():
+    """Create standard selling/buying price lists if the setup wizard never ran."""
+    if not frappe.db.exists("Price List", "Standard Selling"):
+        frappe.get_doc({
+            "doctype": "Price List",
+            "price_list_name": "Standard Selling",
+            "currency": _COMPANY_CURRENCY,
+            "selling": 1,
+            "buying": 0,
+            "enabled": 1,
+        }).insert(ignore_permissions=True)
+    if not frappe.db.exists("Price List", "Standard Buying"):
+        frappe.get_doc({
+            "doctype": "Price List",
+            "price_list_name": "Standard Buying",
+            "currency": _COMPANY_CURRENCY,
+            "selling": 0,
+            "buying": 1,
+            "enabled": 1,
+        }).insert(ignore_permissions=True)
+
+
+def _seed_sales_orders():
+    """Create a demo Sales Order: 5 Melee Bands + 1 Solitaire for Rajwadi Jewellers.
+
+    Jewellery pricing breakdown (22K @ $91.67/g):
+      Ring - Melee Band 22K (qty=22.5g = 5 rings × 4.5g avg):
+        gross_wt=22.5g, stone_wt=0.15g (5×0.15ct melee × 0.2g/ct), net=22.35g
+        metal   = 22.35 × 91.67 = $2,048.82
+        making  = 22.35 × 12.00 =   $268.20
+        stones  = 0.75ct × $180 =   $135.00  →  line total $2,452.02
+
+      Ring - Solitaire 22K (qty=5.0g = 1 ring):
+        gross_wt=5.0g, stone_wt=0.20g (1ct × 0.2g/ct), net=4.80g
+        metal   = 4.80 × 91.67  =  $440.02
+        making  = 4.80 × 20.00  =   $96.00
+        stones  = 1.0ct × $950  =  $950.00  →  line total $1,486.02
+    """
+    _ensure_price_lists()
+
+    if frappe.db.exists("Sales Order", {"po_no": "DEMO-SO-001"}):
+        # Backfill jewellery custom fields if they were added after initial seed
+        _so_backfill_jewellery_fields()
+    else:
+        today = frappe.utils.today()
+        delivery_date = frappe.utils.add_days(today, 30)
+
+        price_list = (
+            frappe.db.get_value("Price List", {"selling": 1, "enabled": 1}, "name")
+            or "Standard Selling"
+        )
+
+        doc = frappe.get_doc({
+            "doctype": "Sales Order",
+            "customer": "Rajwadi Jewellers",
+            "transaction_date": today,
+            "delivery_date": delivery_date,
+            "po_no": "DEMO-SO-001",
+            "order_type": "Sales",
+            "currency": _COMPANY_CURRENCY,
+            "selling_price_list": price_list,
+            "ignore_pricing_rule": 1,
+            "remarks": _SEED_REMARK,
+            "items": [
+                {
+                    "item_code": "Ring - Melee Band 22K",
+                    "qty": 22.5,           # 5 rings × 4.5 g
+                    "uom": "Gram",
+                    "rate": 109.0,         # ≈ $2,452 / 22.5g
+                    "delivery_date": delivery_date,
+                    "description": "5 rings × 4.5 g avg — Melee Diamond Bands (22K)",
+                },
+                {
+                    "item_code": "Ring - Solitaire 22K",
+                    "qty": 5.0,            # 1 ring × 5.0 g
+                    "uom": "Gram",
+                    "rate": 297.20,        # ≈ $1,486 / 5.0g
+                    "delivery_date": delivery_date,
+                    "description": "1 ring × 5.0 g — Solitaire with 1 ct Diamond (22K)",
+                },
+            ],
+        })
+        doc.insert(ignore_permissions=True)
+        try:
+            doc.submit()
+        except Exception as e:
+            frappe.logger().warning(f"[loupe24k seed] Sales Order submit failed: {e}")
+
+        _so_backfill_jewellery_fields(doc.name)
+        _so_add_stone_details(doc.name)
+
+    # ── Sales Order 2: Exhibition Display Stock (14 items) ───────────────────
+    _SO2_ITEMS = [
+        {
+            "item_code": "Ring - Plain Band 22K",
+            "qty": 22.5, "uom": "Gram", "rate": 103.67, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Plain Band Rings – 5 pieces × 4.5 g",
+            "_jewellery": {
+                "gross_wt": 22.50, "stone_wt": 0.00, "net_gold_wt": 22.50,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 2062.58, "making_charge": 270.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Ring - Plain Band 22K",
+            "qty": 13.5, "uom": "Gram", "rate": 103.67, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Plain Band Rings – 3 pieces × 4.5 g (petite)",
+            "_jewellery": {
+                "gross_wt": 13.50, "stone_wt": 0.00, "net_gold_wt": 13.50,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 1237.55, "making_charge": 162.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Ring - Solitaire 22K",
+            "qty": 11.0, "uom": "Gram", "rate": 193.97, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Solitaire Rings – 2 pieces × 5.5 g (0.5 ct each)",
+            "_jewellery": {
+                "gross_wt": 11.00, "stone_wt": 0.40, "net_gold_wt": 10.60,
+                "gold_rate": 91.67, "making_rate": 20.00,
+                "metal_value": 971.70, "making_charge": 212.00, "stone_value": 950.00,
+            },
+        },
+        {
+            "item_code": "Ring - Solitaire 22K",
+            "qty": 16.5, "uom": "Gram", "rate": 193.97, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Solitaire Rings – 3 pieces × 5.5 g (larger stones)",
+            "_jewellery": {
+                "gross_wt": 16.50, "stone_wt": 0.60, "net_gold_wt": 15.90,
+                "gold_rate": 91.67, "making_rate": 20.00,
+                "metal_value": 1457.55, "making_charge": 318.00, "stone_value": 1425.00,
+            },
+        },
+        {
+            "item_code": "Ring - Melee Band 22K",
+            "qty": 18.0, "uom": "Gram", "rate": 130.21, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Melee Diamond Bands – 4 pieces × 4.5 g",
+            "_jewellery": {
+                "gross_wt": 18.00, "stone_wt": 0.60, "net_gold_wt": 17.40,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 1595.06, "making_charge": 208.80, "stone_value": 540.00,
+            },
+        },
+        {
+            "item_code": "Ring - Melee Band 22K",
+            "qty": 22.5, "uom": "Gram", "rate": 130.21, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Melee Diamond Bands – 5 pieces × 4.5 g (wide band)",
+            "_jewellery": {
+                "gross_wt": 22.50, "stone_wt": 0.75, "net_gold_wt": 21.75,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 1993.83, "making_charge": 261.00, "stone_value": 675.00,
+            },
+        },
+        {
+            "item_code": "Ring - Plain Band 24K",
+            "qty": 8.0, "uom": "Gram", "rate": 110.00, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "Pure 24K Gold Bands – 2 pieces × 4.0 g",
+            "_jewellery": {
+                "gross_wt": 8.00, "stone_wt": 0.00, "net_gold_wt": 8.00,
+                "gold_rate": 100.00, "making_rate": 10.00,
+                "metal_value": 800.00, "making_charge": 80.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Bangle - Floral 22K",
+            "qty": 4, "uom": "Piece", "rate": 1696.05, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Gold Floral Bangles – 4 pieces (2 pairs)",
+            "_jewellery": {
+                "gross_wt": 63.60, "stone_wt": 0.00, "net_gold_wt": 63.60,
+                "gold_rate": 91.67, "making_rate": 15.00,
+                "metal_value": 5830.21, "making_charge": 954.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Bangle - Floral 22K",
+            "qty": 2, "uom": "Piece", "rate": 1056.04, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Gold Slim Bangles – 2 pieces (1 pair)",
+            "_jewellery": {
+                "gross_wt": 19.80, "stone_wt": 0.00, "net_gold_wt": 19.80,
+                "gold_rate": 91.67, "making_rate": 15.00,
+                "metal_value": 1815.07, "making_charge": 297.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Necklace - Traditional 22K",
+            "qty": 1, "uom": "Piece", "rate": 8378.15, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Heavy Temple Necklace with CZ stones",
+            "_jewellery": {
+                "gross_wt": 78.50, "stone_wt": 3.20, "net_gold_wt": 75.30,
+                "gold_rate": 91.67, "making_rate": 18.00,
+                "metal_value": 6902.75, "making_charge": 1355.40, "stone_value": 120.00,
+            },
+        },
+        {
+            "item_code": "Necklace - Traditional 22K",
+            "qty": 2, "uom": "Piece", "rate": 5168.86, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Lightweight Chain Necklaces – 2 pieces",
+            "_jewellery": {
+                "gross_wt": 94.00, "stone_wt": 2.50, "net_gold_wt": 91.50,
+                "gold_rate": 91.67, "making_rate": 18.00,
+                "metal_value": 8387.81, "making_charge": 1647.00, "stone_value": 70.00,
+            },
+        },
+        {
+            "item_code": "Earrings - Stud 22K",
+            "qty": 3, "uom": "Piece", "rate": 1032.05, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Gold Stud Earrings – 3 pairs",
+            "_jewellery": {
+                "gross_wt": 29.58, "stone_wt": 0.00, "net_gold_wt": 29.58,
+                "gold_rate": 91.67, "making_rate": 13.00,
+                "metal_value": 2711.60, "making_charge": 384.54, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Earrings - Stud 22K",
+            "qty": 2, "uom": "Piece", "rate": 1867.19, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "22K Gold Dangle Earrings with CZ – 2 pairs",
+            "_jewellery": {
+                "gross_wt": 36.80, "stone_wt": 1.60, "net_gold_wt": 35.20,
+                "gold_rate": 91.67, "making_rate": 13.00,
+                "metal_value": 3226.78, "making_charge": 457.60, "stone_value": 50.00,
+            },
+        },
+        {
+            "item_code": "Ring - Diamond 18K",
+            "qty": 2, "uom": "Piece", "rate": 916.83, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 30),
+            "description": "18K Gold Diamond Rings – 2 pieces",
+            "_jewellery": {
+                "gross_wt": 16.48, "stone_wt": 1.70, "net_gold_wt": 14.78,
+                "gold_rate": 75.00, "making_rate": 22.00,
+                "metal_value": 1108.50, "making_charge": 325.16, "stone_value": 400.00,
+            },
+        },
+    ]
+    _create_sales_order(
+        po_no="DEMO-SO-002",
+        customer="Rajwadi Jewellers",
+        price_list=frappe.db.get_value("Price List", {"selling": 1, "enabled": 1}, "name") or "Standard Selling",
+        items=_SO2_ITEMS,
+        summary={
+            "total_gross_wt":      452.76,
+            "total_stone_wt":       11.35,
+            "total_net_gold_wt":   441.41,
+            "total_gold_value":   40100.99,
+            "total_making_charges": 6932.50,
+            "total_stone_charges":  4210.00,
+        },
+        stones=[
+            {"item_ref": "Ring - Solitaire 22K", "stone_type": "Certified Solitaire Diamond",
+             "qty": 2, "weight": 0.40, "weight_unit": "ct", "rate_per_unit": 950.00, "amount": 950.00},
+            {"item_ref": "Ring - Solitaire 22K", "stone_type": "Certified Solitaire Diamond",
+             "qty": 3, "weight": 0.60, "weight_unit": "ct", "rate_per_unit": 950.00, "amount": 1425.00},
+            {"item_ref": "Ring - Melee Band 22K", "stone_type": "Round Diamond",
+             "qty": 60, "weight": 3.00, "weight_unit": "ct", "rate_per_unit": 180.00, "amount": 540.00},
+            {"item_ref": "Ring - Melee Band 22K", "stone_type": "Round Diamond",
+             "qty": 75, "weight": 3.75, "weight_unit": "ct", "rate_per_unit": 180.00, "amount": 675.00},
+            {"item_ref": "Necklace - Traditional 22K", "stone_type": "CZ Synthetic Stone",
+             "qty": 30, "weight": 3.20, "weight_unit": "g", "rate_per_unit": 3.75, "amount": 120.00},
+            {"item_ref": "Necklace - Traditional 22K", "stone_type": "CZ Synthetic Stone",
+             "qty": 25, "weight": 2.50, "weight_unit": "g", "rate_per_unit": 2.80, "amount": 70.00},
+            {"item_ref": "Earrings - Stud 22K", "stone_type": "CZ Synthetic Stone",
+             "qty": 16, "weight": 1.60, "weight_unit": "g", "rate_per_unit": 3.13, "amount": 50.00},
+            {"item_ref": "Ring - Diamond 18K", "stone_type": "Round Diamond",
+             "qty": 16, "weight": 1.70, "weight_unit": "ct", "rate_per_unit": 235.29, "amount": 400.00},
+        ],
+    )
+
+    # ── Sales Order 3: Wholesale Regular Order (11 items) ────────────────────
+    _SO3_ITEMS = [
+        {
+            "item_code": "Ring - Plain Band 22K",
+            "qty": 67.5, "uom": "Gram", "rate": 103.67, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 45),
+            "description": "22K Plain Band Rings – 15 pieces × 4.5 g",
+            "_jewellery": {
+                "gross_wt": 67.50, "stone_wt": 0.00, "net_gold_wt": 67.50,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 6187.73, "making_charge": 810.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Ring - Plain Band 22K",
+            "qty": 45.0, "uom": "Gram", "rate": 103.67, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 45),
+            "description": "22K Plain Band Rings – 10 pieces × 4.5 g (slim)",
+            "_jewellery": {
+                "gross_wt": 45.00, "stone_wt": 0.00, "net_gold_wt": 45.00,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 4125.15, "making_charge": 540.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Ring - Melee Band 22K",
+            "qty": 31.5, "uom": "Gram", "rate": 130.21, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 45),
+            "description": "22K Melee Diamond Bands – 7 pieces × 4.5 g",
+            "_jewellery": {
+                "gross_wt": 31.50, "stone_wt": 1.05, "net_gold_wt": 30.45,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 2791.30, "making_charge": 365.40, "stone_value": 945.00,
+            },
+        },
+        {
+            "item_code": "Ring - Melee Band 22K",
+            "qty": 22.5, "uom": "Gram", "rate": 130.21, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 45),
+            "description": "22K Melee Diamond Bands – 5 pieces × 4.5 g (wider)",
+            "_jewellery": {
+                "gross_wt": 22.50, "stone_wt": 0.75, "net_gold_wt": 21.75,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 1993.83, "making_charge": 261.00, "stone_value": 675.00,
+            },
+        },
+        {
+            "item_code": "Ring - Solitaire 22K",
+            "qty": 20.0, "uom": "Gram", "rate": 193.97, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 45),
+            "description": "22K Solitaire Rings – 4 pieces × 5.0 g (0.5 ct each)",
+            "_jewellery": {
+                "gross_wt": 20.00, "stone_wt": 0.80, "net_gold_wt": 19.20,
+                "gold_rate": 91.67, "making_rate": 20.00,
+                "metal_value": 1760.06, "making_charge": 384.00, "stone_value": 1900.00,
+            },
+        },
+        {
+            "item_code": "Ring - Plain Band 24K",
+            "qty": 16.0, "uom": "Gram", "rate": 110.00, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 45),
+            "description": "Pure 24K Gold Bands – 4 pieces × 4.0 g",
+            "_jewellery": {
+                "gross_wt": 16.00, "stone_wt": 0.00, "net_gold_wt": 16.00,
+                "gold_rate": 100.00, "making_rate": 10.00,
+                "metal_value": 1600.00, "making_charge": 160.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Bangle - Floral 22K",
+            "qty": 8, "uom": "Piece", "rate": 1674.72, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 45),
+            "description": "22K Gold Floral Bangles – 8 pieces",
+            "_jewellery": {
+                "gross_wt": 125.60, "stone_wt": 0.00, "net_gold_wt": 125.60,
+                "gold_rate": 91.67, "making_rate": 15.00,
+                "metal_value": 11513.75, "making_charge": 1884.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Necklace - Traditional 22K",
+            "qty": 4, "uom": "Piece", "rate": 5052.37, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 45),
+            "description": "22K Traditional Chain Necklaces – 4 pieces with CZ",
+            "_jewellery": {
+                "gross_wt": 188.00, "stone_wt": 5.00, "net_gold_wt": 183.00,
+                "gold_rate": 91.67, "making_rate": 18.00,
+                "metal_value": 16775.61, "making_charge": 3294.00, "stone_value": 140.00,
+            },
+        },
+        {
+            "item_code": "Necklace - Traditional 22K",
+            "qty": 2, "uom": "Piece", "rate": 7906.57, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 45),
+            "description": "22K Heavy Temple Necklaces – 2 pieces with CZ",
+            "_jewellery": {
+                "gross_wt": 148.00, "stone_wt": 6.00, "net_gold_wt": 142.00,
+                "gold_rate": 91.67, "making_rate": 18.00,
+                "metal_value": 13017.14, "making_charge": 2556.00, "stone_value": 240.00,
+            },
+        },
+        {
+            "item_code": "Earrings - Stud 22K",
+            "qty": 8, "uom": "Piece", "rate": 1032.05, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 45),
+            "description": "22K Gold Stud Earrings – 8 pairs",
+            "_jewellery": {
+                "gross_wt": 78.88, "stone_wt": 0.00, "net_gold_wt": 78.88,
+                "gold_rate": 91.67, "making_rate": 13.00,
+                "metal_value": 7230.93, "making_charge": 1025.44, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Ring - Diamond 18K",
+            "qty": 3, "uom": "Piece", "rate": 916.83, "delivery_date": frappe.utils.add_days(frappe.utils.today(), 45),
+            "description": "18K Gold Diamond Cluster Rings – 3 pieces",
+            "_jewellery": {
+                "gross_wt": 24.72, "stone_wt": 2.55, "net_gold_wt": 22.17,
+                "gold_rate": 75.00, "making_rate": 22.00,
+                "metal_value": 1662.75, "making_charge": 487.74, "stone_value": 600.00,
+            },
+        },
+    ]
+    _create_sales_order(
+        po_no="DEMO-SO-003",
+        customer="Goldfield Exports Pvt Ltd",
+        price_list=frappe.db.get_value("Price List", {"selling": 1, "enabled": 1}, "name") or "Standard Selling",
+        items=_SO3_ITEMS,
+        summary={
+            "total_gross_wt":      777.20,
+            "total_stone_wt":       16.15,
+            "total_net_gold_wt":   761.05,
+            "total_gold_value":   66658.25,
+            "total_making_charges": 11766.58,
+            "total_stone_charges":   4500.00,
+        },
+        stones=[
+            {"item_ref": "Ring - Melee Band 22K", "stone_type": "Round Diamond",
+             "qty": 53, "weight": 2.625, "weight_unit": "ct", "rate_per_unit": 180.00, "amount": 472.50},
+            {"item_ref": "Ring - Melee Band 22K", "stone_type": "Round Diamond",
+             "qty": 38, "weight": 1.875, "weight_unit": "ct", "rate_per_unit": 180.00, "amount": 337.50},
+            {"item_ref": "Ring - Solitaire 22K", "stone_type": "Certified Solitaire Diamond",
+             "qty": 4, "weight": 0.80, "weight_unit": "ct", "rate_per_unit": 950.00, "amount": 760.00},
+            {"item_ref": "Necklace - Traditional 22K", "stone_type": "CZ Synthetic Stone",
+             "qty": 100, "weight": 5.00, "weight_unit": "g", "rate_per_unit": 1.40, "amount": 140.00},
+            {"item_ref": "Necklace - Traditional 22K", "stone_type": "CZ Synthetic Stone",
+             "qty": 60, "weight": 6.00, "weight_unit": "g", "rate_per_unit": 4.00, "amount": 240.00},
+            {"item_ref": "Ring - Diamond 18K", "stone_type": "Round Diamond",
+             "qty": 24, "weight": 2.55, "weight_unit": "ct", "rate_per_unit": 235.29, "amount": 564.70},
+        ],
+    )
+
+
+def _create_sales_order(po_no, customer, price_list, items, summary, stones=None):
+    """Insert one Sales Order with jewellery pricing fields. Idempotent."""
+    if frappe.db.exists("Sales Order", {"po_no": po_no}):
+        return
+
+    today = frappe.utils.today()
+    delivery_date = frappe.utils.add_days(today, 30)
+
+    std_items = []
+    for it in items:
+        row = {k: v for k, v in it.items() if k != "_jewellery"}
+        if "delivery_date" not in row:
+            row["delivery_date"] = delivery_date
+        std_items.append(row)
+
+    doc = frappe.get_doc({
+        "doctype": "Sales Order",
+        "customer": customer,
+        "transaction_date": today,
+        "delivery_date": delivery_date,
+        "po_no": po_no,
+        "order_type": "Sales",
+        "currency": _COMPANY_CURRENCY,
+        "selling_price_list": price_list,
+        "ignore_pricing_rule": 1,
+        "remarks": _SEED_REMARK,
+        "items": std_items,
+    })
+    doc.insert(ignore_permissions=True)
+    try:
+        doc.submit()
+    except Exception as e:
+        frappe.logger().warning(f"[loupe24k seed] Sales Order {po_no} submit failed: {e}")
+
+    # ── Jewellery custom fields on item rows (index-matched) ──────────────────
+    rows = frappe.get_all(
+        "Sales Order Item",
+        filters={"parent": doc.name},
+        fields=["name", "item_code", "idx"],
+        order_by="idx asc",
+    )
+    for row in rows:
+        pos = row["idx"] - 1
+        jewellery = items[pos].get("_jewellery") if pos < len(items) else None
+        if jewellery:
+            try:
+                frappe.db.set_value("Sales Order Item", row["name"], jewellery)
+            except Exception:
+                pass
+
+    # ── Parent-level summary ──────────────────────────────────────────────────
+    try:
+        frappe.db.set_value("Sales Order", doc.name, summary)
+    except Exception:
+        pass
+
+    # ── Stone detail rows ─────────────────────────────────────────────────────
+    for idx, stone in enumerate(stones or [], start=1):
+        try:
+            frappe.get_doc({
+                "doctype": "Jewellery Stone Detail",
+                "parenttype": "Sales Order",
+                "parent": doc.name,
+                "parentfield": "jewellery_stones",
+                "idx": idx,
+                **stone,
+            }).insert(ignore_permissions=True)
+        except Exception:
+            pass
+
+    frappe.logger().info(
+        f"[loupe24k seed] Sales Order {po_no} created for {customer}: {doc.name}"
+    )
+
+
+def _so_backfill_jewellery_fields(so_name=None):
+    """Set jewellery custom fields on the demo Sales Order items and parent summary."""
+    if not so_name:
+        so_name = frappe.db.get_value("Sales Order", {"po_no": "DEMO-SO-001"}, "name")
+    if not so_name:
+        return
+
+    # Item-level fields keyed by item_code
+    item_fields = {
+        "Ring - Melee Band 22K": {
+            "gross_wt": 22.5, "stone_wt": 0.15, "net_gold_wt": 22.35,
+            "gold_rate": 91.67, "making_rate": 12.00,
+            "metal_value": 2048.82, "making_charge": 268.20, "stone_value": 135.00,
+        },
+        "Ring - Solitaire 22K": {
+            "gross_wt": 5.0, "stone_wt": 0.20, "net_gold_wt": 4.80,
+            "gold_rate": 91.67, "making_rate": 20.00,
+            "metal_value": 440.02, "making_charge": 96.00, "stone_value": 950.00,
+        },
+    }
+    rows = frappe.get_all(
+        "Sales Order Item",
+        filters={"parent": so_name},
+        fields=["name", "item_code"],
+    )
+    for row in rows:
+        fields = item_fields.get(row["item_code"])
+        if fields:
+            try:
+                frappe.db.set_value("Sales Order Item", row["name"], fields)
+            except Exception:
+                pass
+
+    try:
+        frappe.db.set_value("Sales Order", so_name, {
+            "total_gross_wt": 27.5,
+            "total_stone_wt": 0.35,
+            "total_net_gold_wt": 27.15,
+            "total_gold_value": 2488.84,
+            "total_making_charges": 364.20,
+            "total_stone_charges": 1085.00,
+        })
+    except Exception:
+        pass
+
+
+def _so_add_stone_details(so_name):
+    """Insert jewellery_stones child table rows for the demo Sales Order."""
+    if frappe.db.count("Jewellery Stone Detail", {"parent": so_name}):
+        return
+
+    stones = [
+        {
+            "item_ref": "Ring - Melee Band 22K",
+            "stone_type": "Round Diamond",
+            "qty": 25, "weight": 0.75, "weight_unit": "ct",
+            "rate_per_unit": 180.00, "amount": 135.00,
+        },
+        {
+            "item_ref": "Ring - Solitaire 22K",
+            "stone_type": "Certified Solitaire Diamond",
+            "qty": 1, "weight": 1.00, "weight_unit": "ct",
+            "rate_per_unit": 950.00, "amount": 950.00,
+        },
+    ]
+    for idx, stone in enumerate(stones, start=1):
+        try:
+            frappe.get_doc({
+                "doctype": "Jewellery Stone Detail",
+                "parenttype": "Sales Order",
+                "parent": so_name,
+                "parentfield": "jewellery_stones",
+                "idx": idx,
+                **stone,
+            }).insert(ignore_permissions=True)
+        except Exception:
+            pass
+
+
+# ── Quotations ────────────────────────────────────────────────────────────────
+
+def _seed_quotations():
+    """Create two demo Quotations exercising the new jewellery pricing fields.
+
+    Quotation 1 — Retail: 4-piece assortment for Rajwadi Jewellers
+      Mirrors the sample invoice: bangle, necklace, 18K diamond ring, earrings.
+      All items use stock_uom=Piece so qty = number of pieces.
+
+    Quotation 2 — Wholesale: bulk plain bands + solitaires for Goldfield Exports
+      Uses existing Gram-UOM ring items, qty = total grams.
+    """
+    _ensure_price_lists()
+
+    price_list = (
+        frappe.db.get_value("Price List", {"selling": 1, "enabled": 1}, "name")
+        or "Standard Selling"
+    )
+    today = frappe.utils.today()
+    valid_till = frappe.utils.add_days(today, 30)
+
+    # ── Quotation 1: Retail assortment ────────────────────────────────────────
+    # Pricing (22K @ $91.67/g, 18K @ $75.00/g):
+    #
+    #  Bangle ×2 (31.42g gross, no stones):
+    #    metal   = 31.42 × 91.67 = $2,880.63
+    #    making  = 31.42 × 15.00 =   $471.30  → line $3,351.93  → rate $1,675.97/pc
+    #
+    #  Necklace ×1 (46.85g gross, 1.25g CZ stones):
+    #    net=45.60g; metal = 45.60 × 91.67 = $4,180.15
+    #    making = 45.60 × 18.00 = $820.80; stones = $35.00 → line $5,035.95
+    #
+    #  18K Diamond Ring ×1 (8.24g gross, 0.85g stone):
+    #    net=7.39g; metal = 7.39 × 75.00 = $554.25
+    #    making = 7.39 × 22.00 = $162.58; stones = $200.00 → line $916.83
+    #
+    #  Earrings ×1 pair (9.86g gross, no stones):
+    #    metal  = 9.86 × 91.67 = $903.87
+    #    making = 9.86 × 13.00 = $128.18  → line $1,032.05
+    #
+    #  Grand total (ex-tax): $10,336.76
+    _Q1_ITEMS = [
+        {
+            "item_code": "Bangle - Floral 22K",
+            "qty": 2, "uom": "Piece",
+            "rate": 1675.97,           # (2880.63 + 471.30) / 2
+            "description": "22K Gold Bangle – Floral Pattern (pair)",
+            "_jewellery": {
+                "gross_wt": 31.420, "stone_wt": 0.000, "net_gold_wt": 31.420,
+                "gold_rate": 91.67, "making_rate": 15.00,
+                "metal_value": 2880.63, "making_charge": 471.30, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Necklace - Traditional 22K",
+            "qty": 1, "uom": "Piece",
+            "rate": 5035.95,
+            "description": "22K Gold Necklace – Traditional (with CZ stones)",
+            "_jewellery": {
+                "gross_wt": 46.850, "stone_wt": 1.250, "net_gold_wt": 45.600,
+                "gold_rate": 91.67, "making_rate": 18.00,
+                "metal_value": 4180.15, "making_charge": 820.80, "stone_value": 35.00,
+            },
+        },
+        {
+            "item_code": "Ring - Diamond 18K",
+            "qty": 1, "uom": "Piece",
+            "rate": 916.83,
+            "description": "18K Gold Diamond Ring (natural diamonds)",
+            "_jewellery": {
+                "gross_wt": 8.240, "stone_wt": 0.850, "net_gold_wt": 7.390,
+                "gold_rate": 75.00, "making_rate": 22.00,
+                "metal_value": 554.25, "making_charge": 162.58, "stone_value": 200.00,
+            },
+        },
+        {
+            "item_code": "Earrings - Stud 22K",
+            "qty": 1, "uom": "Piece",
+            "rate": 1032.05,
+            "description": "22K Gold Earrings – Stud Design (pair)",
+            "_jewellery": {
+                "gross_wt": 9.860, "stone_wt": 0.000, "net_gold_wt": 9.860,
+                "gold_rate": 91.67, "making_rate": 13.00,
+                "metal_value": 903.87, "making_charge": 128.18, "stone_value": 0.00,
+            },
+        },
+    ]
+    _Q1_STONES = [
+        {
+            "item_ref": "Necklace - Traditional 22K",
+            "stone_type": "CZ Synthetic Stone",
+            "qty": 24, "weight": 1.250, "weight_unit": "g",
+            "rate_per_unit": 28.00, "amount": 35.00,
+        },
+        {
+            "item_ref": "Ring - Diamond 18K",
+            "stone_type": "Round Diamond",
+            "qty": 8, "weight": 0.850, "weight_unit": "ct",
+            "rate_per_unit": 235.29, "amount": 200.00,
+        },
+    ]
+    _Q1_SUMMARY = {
+        "total_gross_wt": 96.370,
+        "total_stone_wt":  2.100,
+        "total_net_gold_wt": 94.270,
+        "total_gold_value": 8518.90,
+        "total_making_charges": 1582.86,
+        "total_stone_charges":   235.00,
+    }
+
+    _create_quotation(
+        quotation_id="QUOT-SEED-001",
+        customer="Rajwadi Jewellers",
+        price_list=price_list,
+        valid_till=valid_till,
+        today=today,
+        items=_Q1_ITEMS,
+        stones=_Q1_STONES,
+        summary=_Q1_SUMMARY,
+    )
+
+    # ── Quotation 2: Wholesale bulk order ────────────────────────────────────
+    # Uses Gram-UOM items; qty = total grams across all pieces.
+    #
+    #  Plain Band 22K ×10 pieces (45.0g total, no stones):
+    #    metal  = 45.00 × 91.67 = $4,125.15
+    #    making = 45.00 × 12.00 =   $540.00  → line $4,665.15  → rate $466.52/pc
+    #
+    #  Solitaire 22K ×3 pieces (15.0g total, 0.45g stone):
+    #    net=14.55g; metal = 14.55 × 91.67 = $1,333.80
+    #    making = 14.55 × 20.00 = $291.00
+    #    stones = 0.75ct × $180 = $135.00   → line $1,759.80  → rate $586.60/pc
+    #
+    #  Grand total (ex-tax): $6,424.95
+    _Q2_ITEMS = [
+        {
+            "item_code": "Ring - Plain Band 22K",
+            "qty": 45.0, "uom": "Gram",
+            "rate": 103.67,            # ≈ $4,665 / 45g
+            "description": "22K Plain Band Rings — 10 pieces × 4.5 g avg",
+            "_jewellery": {
+                "gross_wt": 45.000, "stone_wt": 0.000, "net_gold_wt": 45.000,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 4125.15, "making_charge": 540.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Ring - Solitaire 22K",
+            "qty": 15.0, "uom": "Gram",
+            "rate": 117.32,            # ≈ $1,760 / 15g
+            "description": "22K Solitaire Rings — 3 pieces × 5.0 g avg (0.25 ct melee each)",
+            "_jewellery": {
+                "gross_wt": 15.000, "stone_wt": 0.450, "net_gold_wt": 14.550,
+                "gold_rate": 91.67, "making_rate": 20.00,
+                "metal_value": 1333.80, "making_charge": 291.00, "stone_value": 135.00,
+            },
+        },
+    ]
+    _Q2_STONES = [
+        {
+            "item_ref": "Ring - Solitaire 22K",
+            "stone_type": "Round Diamond",
+            "qty": 9, "weight": 0.750, "weight_unit": "ct",
+            "rate_per_unit": 180.00, "amount": 135.00,
+        },
+    ]
+    _Q2_SUMMARY = {
+        "total_gross_wt": 60.000,
+        "total_stone_wt":  0.450,
+        "total_net_gold_wt": 59.550,
+        "total_gold_value": 5458.95,
+        "total_making_charges": 831.00,
+        "total_stone_charges":  135.00,
+    }
+
+    _create_quotation(
+        quotation_id="QUOT-SEED-002",
+        customer="Goldfield Exports Pvt Ltd",
+        price_list=price_list,
+        valid_till=valid_till,
+        today=today,
+        items=_Q2_ITEMS,
+        stones=_Q2_STONES,
+        summary=_Q2_SUMMARY,
+    )
+
+    # ── Quotation 3: Grand Bridal Collection (12 items) ───────────────────────
+    # Rajwadi Jewellers; full bridal set across 12 line items to exercise
+    # multi-page PDF layout.  22K @ $91.67/g, 18K @ $75.00/g, 24K @ $100/g.
+    _Q3_ITEMS = [
+        {
+            "item_code": "Bangle - Floral 22K",
+            "qty": 4, "uom": "Piece",
+            "rate": 1696.05,
+            "description": "22K Gold Bangle – Wide Bridal Pattern (2 pairs)",
+            "_jewellery": {
+                "gross_wt": 63.60, "stone_wt": 0.00, "net_gold_wt": 63.60,
+                "gold_rate": 91.67, "making_rate": 15.00,
+                "metal_value": 5830.21, "making_charge": 954.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Bangle - Floral 22K",
+            "qty": 2, "uom": "Piece",
+            "rate": 1056.04,
+            "description": "22K Gold Bangle – Slim Accent Pattern (1 pair)",
+            "_jewellery": {
+                "gross_wt": 19.80, "stone_wt": 0.00, "net_gold_wt": 19.80,
+                "gold_rate": 91.67, "making_rate": 15.00,
+                "metal_value": 1815.07, "making_charge": 297.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Necklace - Traditional 22K",
+            "qty": 1, "uom": "Piece",
+            "rate": 8378.15,
+            "description": "22K Heavy Bridal Necklace with CZ Stones",
+            "_jewellery": {
+                "gross_wt": 78.50, "stone_wt": 3.20, "net_gold_wt": 75.30,
+                "gold_rate": 91.67, "making_rate": 18.00,
+                "metal_value": 6902.75, "making_charge": 1355.40, "stone_value": 120.00,
+            },
+        },
+        {
+            "item_code": "Necklace - Traditional 22K",
+            "qty": 1, "uom": "Piece",
+            "rate": 5746.71,
+            "description": "22K Gold Rope Chain Necklace",
+            "_jewellery": {
+                "gross_wt": 52.40, "stone_wt": 0.00, "net_gold_wt": 52.40,
+                "gold_rate": 91.67, "making_rate": 18.00,
+                "metal_value": 4803.51, "making_charge": 943.20, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Earrings - Stud 22K",
+            "qty": 2, "uom": "Piece",
+            "rate": 1496.78,
+            "description": "22K Gold Jhumka Earrings – Large (2 pairs)",
+            "_jewellery": {
+                "gross_wt": 28.60, "stone_wt": 0.00, "net_gold_wt": 28.60,
+                "gold_rate": 91.67, "making_rate": 13.00,
+                "metal_value": 2621.76, "making_charge": 371.80, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Earrings - Stud 22K",
+            "qty": 1, "uom": "Piece",
+            "rate": 1867.19,
+            "description": "22K Gold Chandbali Drop Earrings (1 pair) with CZ",
+            "_jewellery": {
+                "gross_wt": 18.40, "stone_wt": 0.80, "net_gold_wt": 17.60,
+                "gold_rate": 91.67, "making_rate": 13.00,
+                "metal_value": 1613.39, "making_charge": 228.80, "stone_value": 25.00,
+            },
+        },
+        {
+            "item_code": "Ring - Diamond 18K",
+            "qty": 2, "uom": "Piece",
+            "rate": 1065.70,
+            "description": "18K Gold Diamond Cluster Rings (2 pcs)",
+            "_jewellery": {
+                "gross_wt": 18.40, "stone_wt": 2.20, "net_gold_wt": 16.20,
+                "gold_rate": 75.00, "making_rate": 22.00,
+                "metal_value": 1215.00, "making_charge": 356.40, "stone_value": 560.00,
+            },
+        },
+        {
+            "item_code": "Ring - Diamond 18K",
+            "qty": 1, "uom": "Piece",
+            "rate": 2254.80,
+            "description": "18K Gold Solitaire Engagement Ring – 1.2 ct Natural Diamond",
+            "_jewellery": {
+                "gross_wt": 9.80, "stone_wt": 1.40, "net_gold_wt": 8.40,
+                "gold_rate": 75.00, "making_rate": 22.00,
+                "metal_value": 630.00, "making_charge": 184.80, "stone_value": 1440.00,
+            },
+        },
+        {
+            "item_code": "Ring - Melee Band 22K",
+            "qty": 18.0, "uom": "Gram",
+            "rate": 130.21,
+            "description": "22K Melee Diamond Bands – 4 pieces × 4.5 g avg",
+            "_jewellery": {
+                "gross_wt": 18.00, "stone_wt": 0.60, "net_gold_wt": 17.40,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 1595.06, "making_charge": 208.80, "stone_value": 540.00,
+            },
+        },
+        {
+            "item_code": "Ring - Plain Band 22K",
+            "qty": 22.5, "uom": "Gram",
+            "rate": 103.67,
+            "description": "22K Plain Band Rings – 5 pieces × 4.5 g avg",
+            "_jewellery": {
+                "gross_wt": 22.50, "stone_wt": 0.00, "net_gold_wt": 22.50,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 2062.58, "making_charge": 270.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Ring - Solitaire 22K",
+            "qty": 11.0, "uom": "Gram",
+            "rate": 193.97,
+            "description": "22K Solitaire Rings – 2 pieces × 5.5 g avg (0.5 ct each)",
+            "_jewellery": {
+                "gross_wt": 11.00, "stone_wt": 0.40, "net_gold_wt": 10.60,
+                "gold_rate": 91.67, "making_rate": 20.00,
+                "metal_value": 971.70, "making_charge": 212.00, "stone_value": 950.00,
+            },
+        },
+        {
+            "item_code": "Ring - Plain Band 24K",
+            "qty": 8.0, "uom": "Gram",
+            "rate": 110.00,
+            "description": "Pure 24K Gold Bands – 2 pieces × 4.0 g avg",
+            "_jewellery": {
+                "gross_wt": 8.00, "stone_wt": 0.00, "net_gold_wt": 8.00,
+                "gold_rate": 100.00, "making_rate": 10.00,
+                "metal_value": 800.00, "making_charge": 80.00, "stone_value": 0.00,
+            },
+        },
+    ]
+    _Q3_STONES = [
+        {
+            "item_ref": "Necklace - Traditional 22K",
+            "stone_type": "CZ Synthetic Stone",
+            "qty": 30, "weight": 3.20, "weight_unit": "g",
+            "rate_per_unit": 4.00, "amount": 120.00,
+        },
+        {
+            "item_ref": "Earrings - Stud 22K",
+            "stone_type": "CZ Synthetic Stone",
+            "qty": 8, "weight": 0.80, "weight_unit": "g",
+            "rate_per_unit": 3.13, "amount": 25.00,
+        },
+        {
+            "item_ref": "Ring - Diamond 18K",
+            "stone_type": "Round Diamond",
+            "qty": 16, "weight": 2.20, "weight_unit": "ct",
+            "rate_per_unit": 254.55, "amount": 560.00,
+        },
+        {
+            "item_ref": "Ring - Diamond 18K",
+            "stone_type": "Certified Solitaire Diamond",
+            "qty": 1, "weight": 1.20, "weight_unit": "ct",
+            "rate_per_unit": 1200.00, "amount": 1440.00,
+        },
+        {
+            "item_ref": "Ring - Melee Band 22K",
+            "stone_type": "Round Diamond",
+            "qty": 60, "weight": 3.00, "weight_unit": "ct",
+            "rate_per_unit": 180.00, "amount": 540.00,
+        },
+        {
+            "item_ref": "Ring - Solitaire 22K",
+            "stone_type": "Certified Solitaire Diamond",
+            "qty": 2, "weight": 1.00, "weight_unit": "ct",
+            "rate_per_unit": 475.00, "amount": 950.00,
+        },
+    ]
+    _Q3_SUMMARY = {
+        "total_gross_wt":      348.50,
+        "total_stone_wt":        8.60,
+        "total_net_gold_wt":   339.90,
+        "total_gold_value":  30861.03,
+        "total_making_charges": 5462.20,
+        "total_stone_charges":  3635.00,
+    }
+    _create_quotation(
+        quotation_id="QUOT-SEED-003",
+        customer="Rajwadi Jewellers",
+        price_list=price_list,
+        valid_till=valid_till,
+        today=today,
+        items=_Q3_ITEMS,
+        stones=_Q3_STONES,
+        summary=_Q3_SUMMARY,
+    )
+
+    # ── Quotation 4: Export Collection Bulk Order (13 items) ──────────────────
+    # Goldfield Exports; large wholesale order mixing gram and piece items.
+    _Q4_ITEMS = [
+        {
+            "item_code": "Ring - Plain Band 22K",
+            "qty": 90.0, "uom": "Gram",
+            "rate": 103.67,
+            "description": "22K Plain Band Rings – 20 pieces × 4.5 g avg",
+            "_jewellery": {
+                "gross_wt": 90.00, "stone_wt": 0.00, "net_gold_wt": 90.00,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 8250.30, "making_charge": 1080.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Ring - Plain Band 22K",
+            "qty": 45.0, "uom": "Gram",
+            "rate": 103.67,
+            "description": "22K Lightweight Plain Bands – 15 pieces × 3.0 g avg",
+            "_jewellery": {
+                "gross_wt": 45.00, "stone_wt": 0.00, "net_gold_wt": 45.00,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 4125.15, "making_charge": 540.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Ring - Melee Band 22K",
+            "qty": 45.0, "uom": "Gram",
+            "rate": 130.21,
+            "description": "22K Melee Diamond Bands – 10 pieces × 4.5 g avg",
+            "_jewellery": {
+                "gross_wt": 45.00, "stone_wt": 1.50, "net_gold_wt": 43.50,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 3987.65, "making_charge": 522.00, "stone_value": 1350.00,
+            },
+        },
+        {
+            "item_code": "Ring - Melee Band 22K",
+            "qty": 22.5, "uom": "Gram",
+            "rate": 130.21,
+            "description": "22K Melee Diamond Bands – 5 pieces × 4.5 g avg (smaller stones)",
+            "_jewellery": {
+                "gross_wt": 22.50, "stone_wt": 0.75, "net_gold_wt": 21.75,
+                "gold_rate": 91.67, "making_rate": 12.00,
+                "metal_value": 1993.83, "making_charge": 261.00, "stone_value": 675.00,
+            },
+        },
+        {
+            "item_code": "Ring - Solitaire 22K",
+            "qty": 25.0, "uom": "Gram",
+            "rate": 202.21,
+            "description": "22K Solitaire Rings – 5 pieces × 5.0 g avg (0.5 ct each)",
+            "_jewellery": {
+                "gross_wt": 25.00, "stone_wt": 1.00, "net_gold_wt": 24.00,
+                "gold_rate": 91.67, "making_rate": 20.00,
+                "metal_value": 2200.08, "making_charge": 480.00, "stone_value": 2375.00,
+            },
+        },
+        {
+            "item_code": "Ring - Solitaire 22K",
+            "qty": 15.0, "uom": "Gram",
+            "rate": 187.20,
+            "description": "22K Solitaire Rings – 3 pieces × 5.0 g avg (smaller stones)",
+            "_jewellery": {
+                "gross_wt": 15.00, "stone_wt": 0.60, "net_gold_wt": 14.40,
+                "gold_rate": 91.67, "making_rate": 20.00,
+                "metal_value": 1320.05, "making_charge": 288.00, "stone_value": 1200.00,
+            },
+        },
+        {
+            "item_code": "Ring - Plain Band 24K",
+            "qty": 20.0, "uom": "Gram",
+            "rate": 110.00,
+            "description": "Pure 24K Gold Bands – 5 pieces × 4.0 g avg",
+            "_jewellery": {
+                "gross_wt": 20.00, "stone_wt": 0.00, "net_gold_wt": 20.00,
+                "gold_rate": 100.00, "making_rate": 10.00,
+                "metal_value": 2000.00, "making_charge": 200.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Bangle - Floral 22K",
+            "qty": 10, "uom": "Piece",
+            "rate": 1674.72,
+            "description": "22K Gold Floral Bangles – 10 pieces",
+            "_jewellery": {
+                "gross_wt": 157.00, "stone_wt": 0.00, "net_gold_wt": 157.00,
+                "gold_rate": 91.67, "making_rate": 15.00,
+                "metal_value": 14392.19, "making_charge": 2355.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Bangle - Floral 22K",
+            "qty": 6, "uom": "Piece",
+            "rate": 2026.73,
+            "description": "22K Gold Wide Premium Bangles – 6 pieces",
+            "_jewellery": {
+                "gross_wt": 114.00, "stone_wt": 0.00, "net_gold_wt": 114.00,
+                "gold_rate": 91.67, "making_rate": 15.00,
+                "metal_value": 10450.38, "making_charge": 1710.00, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Necklace - Traditional 22K",
+            "qty": 5, "uom": "Piece",
+            "rate": 5052.37,
+            "description": "22K Traditional Chain Necklaces – 5 pieces with CZ",
+            "_jewellery": {
+                "gross_wt": 235.00, "stone_wt": 6.25, "net_gold_wt": 228.75,
+                "gold_rate": 91.67, "making_rate": 18.00,
+                "metal_value": 20969.36, "making_charge": 4117.50, "stone_value": 175.00,
+            },
+        },
+        {
+            "item_code": "Necklace - Traditional 22K",
+            "qty": 3, "uom": "Piece",
+            "rate": 7906.57,
+            "description": "22K Heavy Temple Necklaces – 3 pieces with CZ",
+            "_jewellery": {
+                "gross_wt": 222.00, "stone_wt": 9.00, "net_gold_wt": 213.00,
+                "gold_rate": 91.67, "making_rate": 18.00,
+                "metal_value": 19525.71, "making_charge": 3834.00, "stone_value": 360.00,
+            },
+        },
+        {
+            "item_code": "Earrings - Stud 22K",
+            "qty": 10, "uom": "Piece",
+            "rate": 1032.05,
+            "description": "22K Gold Stud Earrings – 10 pairs",
+            "_jewellery": {
+                "gross_wt": 98.60, "stone_wt": 0.00, "net_gold_wt": 98.60,
+                "gold_rate": 91.67, "making_rate": 13.00,
+                "metal_value": 9038.66, "making_charge": 1281.80, "stone_value": 0.00,
+            },
+        },
+        {
+            "item_code": "Ring - Diamond 18K",
+            "qty": 4, "uom": "Piece",
+            "rate": 916.83,
+            "description": "18K Gold Diamond Rings – 4 pieces",
+            "_jewellery": {
+                "gross_wt": 32.96, "stone_wt": 3.40, "net_gold_wt": 29.56,
+                "gold_rate": 75.00, "making_rate": 22.00,
+                "metal_value": 2217.00, "making_charge": 650.32, "stone_value": 800.00,
+            },
+        },
+    ]
+    _Q4_STONES = [
+        {
+            "item_ref": "Ring - Melee Band 22K",
+            "stone_type": "Round Diamond",
+            "qty": 75, "weight": 7.50, "weight_unit": "ct",
+            "rate_per_unit": 180.00, "amount": 1350.00,
+        },
+        {
+            "item_ref": "Ring - Melee Band 22K",
+            "stone_type": "Round Diamond",
+            "qty": 38, "weight": 3.75, "weight_unit": "ct",
+            "rate_per_unit": 180.00, "amount": 675.00,
+        },
+        {
+            "item_ref": "Ring - Solitaire 22K",
+            "stone_type": "Certified Solitaire Diamond",
+            "qty": 5, "weight": 2.50, "weight_unit": "ct",
+            "rate_per_unit": 950.00, "amount": 2375.00,
+        },
+        {
+            "item_ref": "Ring - Solitaire 22K",
+            "stone_type": "Certified Solitaire Diamond",
+            "qty": 3, "weight": 1.50, "weight_unit": "ct",
+            "rate_per_unit": 800.00, "amount": 1200.00,
+        },
+        {
+            "item_ref": "Necklace - Traditional 22K",
+            "stone_type": "CZ Synthetic Stone",
+            "qty": 125, "weight": 6.25, "weight_unit": "g",
+            "rate_per_unit": 1.40, "amount": 175.00,
+        },
+        {
+            "item_ref": "Necklace - Traditional 22K",
+            "stone_type": "CZ Synthetic Stone",
+            "qty": 90, "weight": 9.00, "weight_unit": "g",
+            "rate_per_unit": 4.00, "amount": 360.00,
+        },
+        {
+            "item_ref": "Ring - Diamond 18K",
+            "stone_type": "Round Diamond",
+            "qty": 32, "weight": 3.40, "weight_unit": "ct",
+            "rate_per_unit": 235.29, "amount": 800.00,
+        },
+    ]
+    _Q4_SUMMARY = {
+        "total_gross_wt":      972.06,
+        "total_stone_wt":       22.50,
+        "total_net_gold_wt":   949.56,
+        "total_gold_value":  101270.36,
+        "total_making_charges": 17119.62,
+        "total_stone_charges":   8935.00,
+    }
+    _create_quotation(
+        quotation_id="QUOT-SEED-004",
+        customer="Goldfield Exports Pvt Ltd",
+        price_list=price_list,
+        valid_till=valid_till,
+        today=today,
+        items=_Q4_ITEMS,
+        stones=_Q4_STONES,
+        summary=_Q4_SUMMARY,
+    )
+
+
+def _create_quotation(quotation_id, customer, price_list, valid_till, today,
+                      items, stones, summary):
+    """Insert one Quotation with full jewellery pricing fields."""
+    if frappe.db.sql(
+        "SELECT name FROM `tabQuotation` WHERE title = %s LIMIT 1", quotation_id
+    ):
+        return
+
+    # Build standard items list (strip the _jewellery helper key)
+    std_items = []
+    for it in items:
+        row = {k: v for k, v in it.items() if k != "_jewellery"}
+        std_items.append(row)
+
+    doc = frappe.get_doc({
+        "doctype": "Quotation",
+        "title": quotation_id,
+        "quotation_to": "Customer",
+        "party_name": customer,
+        "transaction_date": today,
+        "valid_till": valid_till,
+        "currency": _COMPANY_CURRENCY,
+        "selling_price_list": price_list,
+        "ignore_pricing_rule": 1,
+        "items": std_items,
+    })
+    doc.insert(ignore_permissions=True, ignore_mandatory=True)
+
+    # ── Set jewellery custom fields on each item row ──────────────────────────
+    # Match by position (idx) so duplicate item_codes in one doc work correctly.
+    rows = frappe.get_all(
+        "Quotation Item",
+        filters={"parent": doc.name},
+        fields=["name", "item_code", "idx"],
+        order_by="idx asc",
+    )
+    for row in rows:
+        pos = row["idx"] - 1          # idx is 1-based
+        jewellery = (
+            items[pos].get("_jewellery")
+            if pos < len(items)
+            else None
+        )
+        if jewellery:
+            try:
+                frappe.db.set_value("Quotation Item", row["name"], jewellery)
+            except Exception:
+                pass
+
+    # ── Set parent-level summary fields ──────────────────────────────────────
+    try:
+        frappe.db.set_value("Quotation", doc.name, summary)
+    except Exception:
+        pass
+
+    # ── Insert stone/gem detail rows ─────────────────────────────────────────
+    for idx, stone in enumerate(stones, start=1):
+        try:
+            frappe.get_doc({
+                "doctype": "Jewellery Stone Detail",
+                "parenttype": "Quotation",
+                "parent": doc.name,
+                "parentfield": "jewellery_stones",
+                "idx": idx,
+                **stone,
+            }).insert(ignore_permissions=True)
+        except Exception:
+            pass
+
+    frappe.logger().info(
+        f"[loupe24k seed] Quotation {quotation_id} created for {customer}: {doc.name}"
+    )
+
+
 # ── Workspace ─────────────────────────────────────────────────────────────────
 
 def _seed_workspace():
@@ -1397,7 +2839,11 @@ def _seed_workspace():
         {"type": "DocType", "label": "Stock Entry",            "link_to": "Stock Entry",            "color": "#AB47BC"},
         {"type": "DocType", "label": "Job Card",               "link_to": "Job Card",               "color": "#F06292"},
         {"type": "DocType", "label": "Serial No",              "link_to": "Serial No",              "color": "#4DB6AC"},
+        # ── CRM ───────────────────────────────────────────────────────────────
+        {"type": "DocType", "label": "Lead",                   "link_to": "Lead",                   "color": "#42A5F5"},
+        {"type": "DocType", "label": "Opportunity",            "link_to": "Opportunity",            "color": "#26C6DA"},
         # ── Sales ─────────────────────────────────────────────────────────────
+        {"type": "DocType", "label": "Sales Order",            "link_to": "Sales Order",            "color": "#FFA726"},
         {"type": "DocType", "label": "Quotation",              "link_to": "Quotation",              "color": "#9CCC65"},
         {"type": "DocType", "label": "Sales Invoice",          "link_to": "Sales Invoice",          "color": "#EF5350"},
         # ── Scrap & Hallmarking ───────────────────────────────────────────────
@@ -1430,8 +2876,14 @@ def _seed_workspace():
         {"type": "Link", "label": "Job Card",   "link_to": "Job Card",   "link_type": "DocType", "onboard": 0},
         {"type": "Link", "label": "Serial No",  "link_to": "Serial No",  "link_type": "DocType", "onboard": 0},
 
+        # ── CRM card ──────────────────────────────────────────────────────────
+        {"type": "Card Break", "label": "CRM"},
+        {"type": "Link", "label": "Lead",        "link_to": "Lead",        "link_type": "DocType", "onboard": 1},
+        {"type": "Link", "label": "Opportunity", "link_to": "Opportunity", "link_type": "DocType", "onboard": 1},
+
         # ── Sales card ────────────────────────────────────────────────────────
         {"type": "Card Break", "label": "Sales"},
+        {"type": "Link", "label": "Sales Order",   "link_to": "Sales Order",   "link_type": "DocType", "onboard": 1},
         {"type": "Link", "label": "Quotation",     "link_to": "Quotation",     "link_type": "DocType", "onboard": 1},
         {"type": "Link", "label": "Sales Invoice", "link_to": "Sales Invoice", "link_type": "DocType", "onboard": 1},
 
@@ -1452,6 +2904,7 @@ def _seed_workspace():
         {"id": "l24k-masters",        "type": "card", "data": {"card_name": "Masters",             "col": 4}},
         {"id": "l24k-karigar-ops",    "type": "card", "data": {"card_name": "Karigar Operations",  "col": 4}},
         {"id": "l24k-manufacturing",  "type": "card", "data": {"card_name": "Manufacturing",        "col": 4}},
+        {"id": "l24k-crm",            "type": "card", "data": {"card_name": "CRM",                 "col": 4}},
         {"id": "l24k-sales",          "type": "card", "data": {"card_name": "Sales",               "col": 4}},
         {"id": "l24k-scrap-hall",     "type": "card", "data": {"card_name": "Scrap & Hallmarking", "col": 4}},
         {"id": "l24k-ledgers",        "type": "card", "data": {"card_name": "Ledgers",             "col": 4}},
@@ -1474,3 +2927,63 @@ def _seed_workspace():
     # Hide every other workspace so only Loupe 24K is visible in the sidebar.
     from loupe24k.setup.install import _hide_other_workspaces
     _hide_other_workspaces()
+
+
+# ── Print Formats ─────────────────────────────────────────────────────────────
+
+def _seed_print_formats():
+    """Create jewellery print formats for Quotation and Sales Order and set them as default."""
+    import os
+
+    _pf_dir = os.path.join(
+        os.path.dirname(__file__),
+        "..", "loupe_24k", "print_format",
+    )
+
+    formats = [
+        {
+            "name": "Jewellery Quotation",
+            "doc_type": "Quotation",
+            "html_file": os.path.join(_pf_dir, "jewellery_quotation", "jewellery_quotation.html"),
+        },
+        {
+            "name": "Jewellery Sales Order",
+            "doc_type": "Sales Order",
+            "html_file": os.path.join(_pf_dir, "jewellery_sales_order", "jewellery_sales_order.html"),
+        },
+    ]
+
+    for pf in formats:
+        with open(pf["html_file"], "r") as f:
+            html_content = f.read()
+
+        if frappe.db.exists("Print Format", pf["name"]):
+            doc = frappe.get_doc("Print Format", pf["name"])
+            doc.html = html_content
+            doc.save(ignore_permissions=True)
+        else:
+            frappe.get_doc({
+                "doctype": "Print Format",
+                "name": pf["name"],
+                "doc_type": pf["doc_type"],
+                "module": "Loupe 24K",
+                "print_format_type": "Jinja",
+                "html": html_content,
+                "disabled": 0,
+                "custom_format": 1,
+            }).insert(ignore_permissions=True)
+
+        # Set as default print format for the DocType (idempotent)
+        ps_name = f"{pf['doc_type']}-default_print_format-default_print_format"
+        if frappe.db.exists("Property Setter", ps_name):
+            frappe.db.set_value("Property Setter", ps_name, "value", pf["name"])
+        else:
+            frappe.make_property_setter({
+                "doctype": pf["doc_type"],
+                "doctype_or_field": "DocType",
+                "fieldname": "default_print_format",
+                "property": "default_print_format",
+                "property_type": "Data",
+                "value": pf["name"],
+            }, ignore_validate=True)
+        frappe.logger().info(f"[loupe24k seed] Print Format '{pf['name']}' set as default for {pf['doc_type']}")

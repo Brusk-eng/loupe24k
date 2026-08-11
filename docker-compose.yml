@@ -93,6 +93,10 @@ services:
       - logs:/home/frappe/frappe-bench/logs
     ports:
       - "${HTTP_PUBLISH_PORT:-8080}:8080"
+    networks:
+      default:
+        aliases:
+          - loupe24k.localhost
     depends_on:
       backend:
         condition: service_started

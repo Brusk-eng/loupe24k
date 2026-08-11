@@ -1,0 +1,265 @@
+{% set company = frappe.get_doc("Company", doc.company) %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 9pt; color: #1a1a1a; padding: 0 4px;
+         print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+
+  /* ── Header ───────────────────────────────────────────────── */
+  .header { display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2.5px solid #8B6914; }
+  .co-name  { font-size: 20pt; font-weight: bold; color: #8B6914; line-height: 1.1; }
+  .co-addr  { font-size: 7.5pt; color: #666; margin-top: 4px; line-height: 1.55; }
+  .doc-block { text-align: right; }
+  .doc-title { font-size: 13pt; font-weight: bold; color: #8B6914; letter-spacing: 1.5px; }
+  .doc-meta  { font-size: 8pt; color: #555; margin-top: 5px; line-height: 1.8; }
+  .doc-meta b { color: #1a1a1a; }
+
+  /* ── Party boxes ──────────────────────────────────────────── */
+  .party-row { display: flex; gap: 16px; margin-bottom: 14px; }
+  .party-box { flex: 1; border: 1px solid #ddd; border-radius: 3px; padding: 8px 10px; }
+  .party-lbl { font-size: 7pt; text-transform: uppercase; color: #999;
+               letter-spacing: 0.8px; margin-bottom: 3px; }
+  .party-name { font-weight: bold; font-size: 9.5pt; }
+  .party-addr { font-size: 7.5pt; color: #666; margin-top: 2px; line-height: 1.45; }
+
+  /* ── Section title ────────────────────────────────────────── */
+  .sec { font-size: 8pt; font-weight: bold; color: #8B6914;
+         text-transform: uppercase; letter-spacing: 0.8px;
+         border-bottom: 1px solid #d4aa45; padding-bottom: 3px; margin-bottom: 7px; }
+
+  /* ── Items table ──────────────────────────────────────────── */
+  table.items { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 8.5pt; }
+  table.items thead tr { background: #f0e6c8; }
+  table.items thead th { padding: 6px 7px; text-align: left; font-weight: 700; font-size: 8pt;
+                         color: #5a3a00; border-bottom: 2px solid #c8960a; }
+  table.items thead th.r { text-align: right; }
+  table.items tbody tr { border-bottom: 1px solid #eee; }
+  table.items tbody tr:nth-child(even) { background: #fdf9f0; }
+  table.items td { padding: 7px 7px 5px; vertical-align: top; }
+  table.items td.r { text-align: right; }
+  table.items td.c { text-align: center; }
+
+  .item-name { font-weight: bold; font-size: 9pt; }
+  .item-details {
+    display: flex; flex-wrap: wrap; gap: 2px 12px;
+    margin-top: 5px; padding: 4px 8px;
+    background: #f7f2e5; border-left: 3px solid #d4aa45;
+    font-size: 7.5pt; color: #555; line-height: 1.7;
+  }
+  .item-details .d { white-space: nowrap; }
+  .item-details .d b { color: #3a2e0a; }
+
+  /* ── Two-column layout ────────────────────────────────────── */
+  .two-col { display: flex; gap: 20px; margin-bottom: 14px; }
+  .col50 { flex: 1; }
+
+  /* ── Weight tiles ─────────────────────────────────────────── */
+  .wt-grid { display: flex; gap: 8px; }
+  .wt-tile { flex: 1; text-align: center; background: #fdf9f0;
+             border: 1px solid #e0cfa0; border-radius: 4px; padding: 8px 4px; }
+  .wt-val  { font-size: 13pt; font-weight: bold; color: #8B6914; line-height: 1.1; }
+  .wt-lbl  { font-size: 7pt; color: #888; margin-top: 3px; }
+
+  /* ── Price summary table ──────────────────────────────────── */
+  table.summary { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+  table.summary td { padding: 4px 6px; border-bottom: 1px solid #f0ead8; }
+  table.summary td.r { text-align: right; font-weight: bold; }
+  table.summary tr.total td { font-weight: bold; color: #8B6914; font-size: 10pt;
+                               border-top: 2px solid #8B6914; border-bottom: none;
+                               padding-top: 6px; }
+
+  /* ── Stone table ──────────────────────────────────────────── */
+  table.stones { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 8.5pt; }
+  table.stones thead tr { background: #e8dbb0; }
+  table.stones thead th { padding: 6px 7px; text-align: left; font-weight: 700; font-size: 8pt;
+                          color: #3a2800; border-bottom: 2px solid #a07010; }
+  table.stones thead th.r { text-align: right; }
+  table.stones thead th.c { text-align: center; }
+  table.stones tbody tr { border-bottom: 1px solid #eee; }
+  table.stones tbody tr:nth-child(even) { background: #fdf9f0; }
+  table.stones td { padding: 5px 7px; vertical-align: middle; }
+  table.stones td.r { text-align: right; }
+  table.stones td.c { text-align: center; }
+
+  /* ── Amount in words ──────────────────────────────────────── */
+  .in-words { border: 1px solid #e0cfa0; border-radius: 3px;
+              padding: 7px 10px; margin-bottom: 14px; font-size: 8pt; line-height: 1.5; }
+  .in-words .lbl { font-size: 7pt; text-transform: uppercase; color: #999;
+                   letter-spacing: 0.6px; margin-bottom: 2px; }
+
+  /* ── Terms ────────────────────────────────────────────────── */
+  .terms { font-size: 7.5pt; color: #666; line-height: 1.6; margin-bottom: 12px; }
+
+  /* ── Signatures ───────────────────────────────────────────── */
+  .sigs { display: flex; justify-content: space-between; margin-top: 36px; }
+  .sig  { border-top: 1px solid #aaa; padding-top: 4px; width: 155px;
+          text-align: center; font-size: 8pt; color: #666; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="co-name">{{ doc.company }}</div>
+    <div class="co-addr">
+      {{ company.address_line1 or '' }}{% if company.address_line2 %}, {{ company.address_line2 }}{% endif %}
+      {% if company.city %}<br>{{ company.city }}{% if company.state %}, {{ company.state }}{% endif %}{% if company.pincode %} {{ company.pincode }}{% endif %}{% endif %}
+      {% if company.phone_no or company.email %}<br>{% if company.phone_no %}Tel: {{ company.phone_no }}{% endif %}{% if company.email %}&nbsp; Email: {{ company.email }}{% endif %}{% endif %}
+    </div>
+  </div>
+  <div class="doc-block">
+    <div class="doc-title">QUOTATION</div>
+    <div class="doc-meta">
+      No.: <b>{{ doc.name }}</b><br>
+      Date: <b>{{ frappe.format(doc.transaction_date, "Date") }}</b><br>
+      Valid Till: <b>{{ frappe.format(doc.valid_till, "Date") if doc.valid_till else "—" }}</b>
+    </div>
+  </div>
+</div>
+
+<!-- PARTY -->
+<div class="party-row">
+  <div class="party-box">
+    <div class="party-lbl">Quotation For</div>
+    <div class="party-name">{{ doc.party_name or doc.quotation_to }}</div>
+    {% if doc.customer_address %}{% set addr = frappe.get_doc("Address", doc.customer_address) %}
+    <div class="party-addr">{{ addr.address_line1 or '' }}{% if addr.address_line2 %}, {{ addr.address_line2 }}{% endif %}{% if addr.city %}<br>{{ addr.city }}{% if addr.state %}, {{ addr.state }}{% endif %}{% if addr.pincode %} {{ addr.pincode }}{% endif %}{% endif %}</div>
+    {% endif %}
+  </div>
+  <div class="party-box">
+    <div class="party-lbl">Shipping Address</div>
+    {% if doc.shipping_address_name %}{% set sa = frappe.get_doc("Address", doc.shipping_address_name) %}
+    <div class="party-name">{{ sa.address_title or '' }}</div>
+    <div class="party-addr">{{ sa.address_line1 or '' }}{% if sa.address_line2 %}, {{ sa.address_line2 }}{% endif %}{% if sa.city %}<br>{{ sa.city }}{% if sa.state %}, {{ sa.state }}{% endif %}{% if sa.pincode %} {{ sa.pincode }}{% endif %}{% endif %}</div>
+    {% else %}<div class="party-addr" style="color:#bbb;">Same as above</div>{% endif %}
+  </div>
+</div>
+
+<!-- ITEMS -->
+<div class="sec">Items</div>
+<table class="items">
+  <thead>
+    <tr>
+      <th style="width:4%">#</th>
+      <th style="width:48%">Description</th>
+      <th style="width:8%">Purity</th>
+      <th style="width:10%">Qty</th>
+      <th class="r" style="width:14%">Rate (USD)</th>
+      <th class="r" style="width:16%">Amount (USD)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in doc.items %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>
+        <div class="item-name">{{ item.item_name or item.item_code }}</div>
+        <div class="item-details">
+          <span class="d">Gross Wt: <b>{{ "%.3f"|format(item.gross_wt or 0) }} g</b></span>
+          <span class="d">Stone Wt: <b>{{ "%.3f"|format(item.stone_wt or 0) }} g</b></span>
+          <span class="d">Net Gold: <b>{{ "%.3f"|format(item.net_gold_wt or 0) }} g</b></span>
+          <span class="d">Gold Rate: <b>{{ frappe.format(item.gold_rate or 0, "Currency") }}/g</b></span>
+          <span class="d">Making: <b>{{ frappe.format(item.making_rate or 0, "Currency") }}/g</b></span>
+          {% if item.stone_value %}<span class="d">Stone: <b>{{ frappe.format(item.stone_value, "Currency") }}</b></span>{% endif %}
+        </div>
+      </td>
+      <td class="c">{{ item.purity or '—' }}</td>
+      <td class="c">{{ item.qty }} {{ item.uom or '' }}</td>
+      <td class="r">{{ frappe.format(item.rate or 0, "Currency") }}</td>
+      <td class="r"><b>{{ frappe.format(item.amount, "Currency") }}</b></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- WEIGHT + PRICE SUMMARY -->
+<div class="two-col">
+  <div class="col50">
+    <div class="sec">Weight Summary</div>
+    <div class="wt-grid">
+      <div class="wt-tile">
+        <div class="wt-val">{{ "%.3f"|format(doc.total_gross_wt or 0) }}</div>
+        <div class="wt-lbl">Gross Wt (g)</div>
+      </div>
+      <div class="wt-tile">
+        <div class="wt-val">{{ "%.3f"|format(doc.total_stone_wt or 0) }}</div>
+        <div class="wt-lbl">Stone Wt (g)</div>
+      </div>
+      <div class="wt-tile">
+        <div class="wt-val">{{ "%.3f"|format(doc.total_net_gold_wt or 0) }}</div>
+        <div class="wt-lbl">Net Gold Wt (g)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col50">
+    <div class="sec">Price Summary</div>
+    <table class="summary">
+      <tr><td>Gold Value</td><td class="r">{{ frappe.format(doc.total_gold_value or 0, "Currency") }}</td></tr>
+      <tr><td>Making Charges</td><td class="r">{{ frappe.format(doc.total_making_charges or 0, "Currency") }}</td></tr>
+      <tr><td>Stone / Diamond Charges</td><td class="r">{{ frappe.format(doc.total_stone_charges or 0, "Currency") }}</td></tr>
+      <tr><td>Taxable Value</td><td class="r">{{ frappe.format(doc.net_total, "Currency") }}</td></tr>
+      {% for tax in doc.taxes %}
+      <tr><td>{{ tax.description }}</td><td class="r">{{ frappe.format(tax.tax_amount, "Currency") }}</td></tr>
+      {% endfor %}
+      <tr class="total"><td>Grand Total</td><td class="r">{{ frappe.format(doc.grand_total, "Currency") }}</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- STONE / GEM DETAILS -->
+{% if doc.jewellery_stones %}
+<div class="sec">Stone / Gem Details</div>
+<table class="stones">
+  <thead>
+    <tr>
+      <th style="width:5%">#</th>
+      <th style="width:26%">Item Reference</th>
+      <th style="width:22%">Stone Type</th>
+      <th class="c" style="width:8%">Qty</th>
+      <th class="r" style="width:12%">Weight</th>
+      <th class="c" style="width:7%">Unit</th>
+      <th class="r" style="width:10%">Rate / Unit</th>
+      <th class="r" style="width:10%">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in doc.jewellery_stones %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ s.item_ref }}</td>
+      <td>{{ s.stone_type }}</td>
+      <td class="c">{{ s.qty or '—' }}</td>
+      <td class="r">{{ "%.3f"|format(s.weight or 0) }}</td>
+      <td class="c">{{ s.weight_unit or '—' }}</td>
+      <td class="r">{{ frappe.format(s.rate_per_unit or 0, "Currency") }}</td>
+      <td class="r"><b>{{ frappe.format(s.amount or 0, "Currency") }}</b></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- AMOUNT IN WORDS -->
+<div class="in-words">
+  <div class="lbl">Amount in Words</div>
+  {{ doc.in_words or '' }}
+</div>
+
+{% if doc.terms %}
+<div class="sec">Terms &amp; Conditions</div>
+<div class="terms">{{ doc.terms }}</div>
+{% endif %}
+
+<div class="sigs">
+  <div class="sig">Customer Signature</div>
+  <div class="sig">Authorised Signatory<br><span style="font-size:7.5pt;color:#aaa;">{{ doc.company }}</span></div>
+</div>
+
+</body>
+</html>
