@@ -84,6 +84,14 @@ def seed():
     frappe.db.commit()
     frappe.logger().info("[loupe24k seed] Warehouses done")
 
+    _seed_departments_and_designations(company)
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Departments/Designations done")
+
+    _seed_employees(company)
+    frappe.db.commit()
+    frappe.logger().info("[loupe24k seed] Employees done")
+
     _configure_stock_settings(company)
     frappe.db.commit()
     frappe.logger().info("[loupe24k seed] Stock Settings done")
@@ -404,6 +412,129 @@ def _seed_warehouses(company):
                 "company": company,
             })
             doc.insert(ignore_permissions=True)
+
+
+# ── Employees ─────────────────────────────────────────────────────────────────
+
+def _seed_departments_and_designations(company):
+    departments = ["Manufacturing"]
+    for department in departments:
+        if not frappe.db.exists(
+            "Department",
+            {"department_name": department, "company": company},
+        ):
+            frappe.get_doc({
+                "doctype": "Department",
+                "department_name": department,
+                "company": company,
+            }).insert(ignore_permissions=True)
+
+    designations = [
+        "Bench Jeweler",
+        "Stone Setter",
+        "Polisher",
+        "Quality Inspector",
+    ]
+    for designation in designations:
+        if not frappe.db.exists("Designation", designation):
+            frappe.get_doc({
+                "doctype": "Designation",
+                "designation_name": designation,
+            }).insert(ignore_permissions=True)
+
+    genders = ["Male", "Female"]
+    for gender in genders:
+        if not frappe.db.exists("Gender", gender):
+            frappe.get_doc({
+                "doctype": "Gender",
+                "gender": gender,
+            }).insert(ignore_permissions=True)
+
+
+def _seed_employees(company):
+    """Create a small set of production-ready employees for MFG assignments."""
+    manufacturing_department = frappe.db.get_value(
+        "Department",
+        {"department_name": "Manufacturing", "company": company},
+        "name",
+    ) or "Manufacturing"
+
+    employees = [
+        {
+            "employee_number": "L24K-EMP-001",
+            "first_name": "Ramesh",
+            "last_name": "Soni",
+            "employee_name": "Ramesh Soni",
+            "designation": "Bench Jeweler",
+            "department": "Manufacturing",
+            "gender": "Male",
+            "date_of_birth": "1990-06-12",
+            "cell_number": "+1 555 0101",
+            "date_of_joining": "2024-01-15",
+            "status": "Active",
+        },
+        {
+            "employee_number": "L24K-EMP-002",
+            "first_name": "Suresh",
+            "last_name": "Patel",
+            "employee_name": "Suresh Patel",
+            "designation": "Stone Setter",
+            "department": "Manufacturing",
+            "gender": "Male",
+            "date_of_birth": "1992-03-08",
+            "cell_number": "+1 555 0102",
+            "date_of_joining": "2024-02-10",
+            "status": "Active",
+        },
+        {
+            "employee_number": "L24K-EMP-003",
+            "first_name": "Anjali",
+            "last_name": "Shah",
+            "employee_name": "Anjali Shah",
+            "designation": "Polisher",
+            "department": "Manufacturing",
+            "gender": "Female",
+            "date_of_birth": "1994-11-21",
+            "cell_number": "+1 555 0103",
+            "date_of_joining": "2024-03-05",
+            "status": "Active",
+        },
+        {
+            "employee_number": "L24K-EMP-004",
+            "first_name": "Meera",
+            "last_name": "Kapoor",
+            "employee_name": "Meera Kapoor",
+            "designation": "Quality Inspector",
+            "department": "Manufacturing",
+            "gender": "Female",
+            "date_of_birth": "1991-09-15",
+            "cell_number": "+1 555 0104",
+            "date_of_joining": "2024-04-01",
+            "status": "Active",
+        },
+    ]
+
+    for emp in employees:
+        existing = frappe.db.get_value(
+            "Employee",
+            {"employee_number": emp["employee_number"]},
+            "name",
+        ) or frappe.db.get_value(
+            "Employee",
+            {"employee_name": emp["employee_name"], "company": company},
+            "name",
+        )
+        if existing:
+            continue
+
+        # ERPNext stores Department names with company suffixes (e.g. "X - ABBR").
+        emp_data = {**emp, "department": manufacturing_department}
+        doc = frappe.get_doc({
+            "doctype": "Employee",
+            "company": company,
+            **emp_data,
+        })
+        doc.insert(ignore_permissions=True)
 
 
 # ── Workstations ──────────────────────────────────────────────────────────────
@@ -1249,12 +1380,22 @@ def _seed_scrap_recovery_entries():
         },
     ]
 
+    # Demonstrate voucher linkage when Job Card records are available.
+    job_card_name = None
+    if frappe.db.exists("DocType", "Job Card"):
+        job_card_name = frappe.db.get_value("Job Card", {}, "name")
+    if job_card_name and sre_list:
+        sre_list[0]["voucher_type"] = "Job Card"
+        sre_list[0]["voucher_no"] = job_card_name
+
     for sre_def in sre_list:
         doc = frappe.get_doc({
             "doctype": "Scrap Recovery Entry",
             "entry_date":    sre_def["entry_date"],
             "refiner":       sre_def["refiner"],
             "recovery_type": sre_def["recovery_type"],
+            "voucher_type":  sre_def.get("voucher_type", ""),
+            "voucher_no":    sre_def.get("voucher_no", ""),
             "recovery_pct":  sre_def["recovery_pct"],
             "credit_posting": sre_def["credit_posting"],
             "remarks":       _SEED_REMARK,

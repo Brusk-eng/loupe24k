@@ -76,6 +76,13 @@ after_migrate = "loupe24k.setup.install.after_migrate"
 # 		"on_trash": "method"
 # 	}
 # }
+doc_events = {
+    "Job Card": {
+        "on_submit": "loupe24k.loupe_24k.doctype.job_card_sync.on_submit",
+        "on_update_after_submit": "loupe24k.loupe_24k.doctype.job_card_sync.on_update_after_submit",
+        "on_cancel": "loupe24k.loupe_24k.doctype.job_card_sync.on_cancel",
+    }
+}
 
 # Scheduled Tasks
 # ---------------

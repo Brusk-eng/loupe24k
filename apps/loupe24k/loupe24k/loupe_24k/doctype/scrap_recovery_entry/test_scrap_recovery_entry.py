@@ -92,3 +92,17 @@ class TestFineRecovered(unittest.TestCase):
         doc = _doc(scrap_items=[_scrap_row(20.0, 18.334)], recovery_pct=100)
         doc.validate()
         self.assertLessEqual(doc.fine_recovered, doc.total_est_fine_wt)
+
+
+class TestVoucherLinkFields(unittest.TestCase):
+    def test_voucher_fields_can_be_set_without_affecting_recovery_math(self):
+        doc = _doc(
+            voucher_type="Job Card",
+            voucher_no="JC-0001",
+            scrap_items=[_scrap_row(10.0, 9.167)],
+            recovery_pct=95,
+        )
+        doc.validate()
+        self.assertEqual(doc.voucher_type, "Job Card")
+        self.assertEqual(doc.voucher_no, "JC-0001")
+        self.assertAlmostEqual(doc.fine_recovered, round(9.167 * 0.95, 3), places=3)

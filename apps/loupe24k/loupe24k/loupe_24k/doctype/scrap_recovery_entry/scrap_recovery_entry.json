@@ -11,6 +11,8 @@
   "col_break_1",
   "recovery_type",
   "reference_no",
+  "voucher_type",
+  "voucher_no",
   "sec_items",
   "scrap_items",
   "sec_recovery",
@@ -60,6 +62,18 @@
    "fieldname": "reference_no",
    "fieldtype": "Data",
    "label": "Refiner Reference No"
+  },
+  {
+   "fieldname": "voucher_type",
+   "fieldtype": "Link",
+   "label": "Voucher Type",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "voucher_no",
+   "fieldtype": "Dynamic Link",
+   "label": "Voucher No",
+   "options": "voucher_type"
   },
   {
    "fieldname": "sec_items",
