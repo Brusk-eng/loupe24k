@@ -85,6 +85,9 @@ setup-site:
 		--install-app loupe24k
 	@echo ">>> Enabling developer mode..."
 	$(COMPOSE) exec backend bench --site $(SITE_NAME) set-config developer_mode 1
+	@echo ">>> Fixing PDF generation (wkhtmltopdf can't resolve *.localhost inside the container)..."
+	$(COMPOSE) exec backend bench --site $(SITE_NAME) set-config host_name "http://frontend:8080"
+	$(COMPOSE) exec backend bash -c "ln -sf $(SITE_NAME) sites/frontend"
 	$(COMPOSE) exec backend bench --site $(SITE_NAME) clear-cache
 	@echo ">>> Setting default site..."
 	$(COMPOSE) exec backend bench use $(SITE_NAME)
@@ -124,12 +127,12 @@ seed:
 
 reset-site:
 	@echo ">>> WARNING: This will DROP the site database and recreate it."
-	@read -p "Continue? [y/N] " yn; [ "$$yn" = "y" ] || exit 1
+	@read -p "Continue? [y/N] " yn; [ "$$yn" = "y" ] || [ "$$yn" = "Y" ] || exit 1
 	$(COMPOSE) exec backend bench drop-site $(SITE_NAME) \
 		--db-root-password $(DB_PASSWORD) --force || true
 	$(MAKE) setup-site
 
 nuke:
 	@echo ">>> WARNING: This removes ALL containers and volumes (complete reset)."
-	@read -p "Continue? [y/N] " yn; [ "$$yn" = "y" ] || exit 1
+	@read -p "Continue? [y/N] " yn; [ "$$yn" = "y" ] || [ "$$yn" = "Y" ] || exit 1
 	$(COMPOSE) down -v --remove-orphans

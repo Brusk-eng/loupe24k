@@ -1,0 +1,246 @@
+{% set company = frappe.get_doc("Company", doc.company) %}
+{% set qr_code = frappe.call("loupe24k.loupe_24k.utils.get_qr_code", doctype=doc.doctype, docname=doc.name) %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 9pt; color: #1a1a1a; padding: 0 4px;
+         print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+
+  /* ── Header ───────────────────────────────────────────────── */
+  .header { display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2.5px solid #8B6914; }
+  .co-name  { font-size: 20pt; font-weight: bold; color: #8B6914; line-height: 1.1; }
+  .co-addr  { font-size: 7.5pt; color: #666; margin-top: 4px; line-height: 1.55; }
+  .doc-block { display: flex; align-items: flex-start; gap: 12px; }
+  .doc-info { text-align: right; }
+  .doc-title { font-size: 13pt; font-weight: bold; color: #8B6914; letter-spacing: 1.5px; }
+  .doc-meta  { font-size: 8pt; color: #555; margin-top: 5px; line-height: 1.8; }
+  .doc-meta b { color: #1a1a1a; }
+  .status-badge { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 3px;
+                  font-size: 7.5pt; font-weight: bold; text-transform: uppercase;
+                  background: #f0e6c8; color: #8B6914; letter-spacing: 0.5px; }
+  .qr-box { text-align: center; }
+  .qr-box img { width: 70px; height: 70px; }
+  .qr-lbl { font-size: 6pt; color: #999; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ── Section title ────────────────────────────────────────── */
+  .sec { font-size: 8pt; font-weight: bold; color: #8B6914;
+         text-transform: uppercase; letter-spacing: 0.8px;
+         border-bottom: 1px solid #d4aa45; padding-bottom: 3px; margin-bottom: 7px; }
+
+  /* ── Order details grid ───────────────────────────────────── */
+  .details-grid { display: flex; flex-wrap: wrap; gap: 0 24px; margin-bottom: 14px; }
+  .detail { width: 23%; margin-bottom: 8px; }
+  .detail-lbl { font-size: 7pt; text-transform: uppercase; color: #999;
+                letter-spacing: 0.6px; margin-bottom: 2px; }
+  .detail-val { font-size: 9pt; font-weight: bold; }
+
+  /* ── Tables ───────────────────────────────────────────────── */
+  table.grid { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 8.5pt; }
+  table.grid thead tr { background: #f0e6c8; }
+  table.grid thead th { padding: 6px 7px; text-align: left; font-weight: 700; font-size: 8pt;
+                        color: #5a3a00; border-bottom: 2px solid #c8960a; }
+  table.grid thead th.r { text-align: right; }
+  table.grid thead th.c { text-align: center; }
+  table.grid tbody tr { border-bottom: 1px solid #eee; }
+  table.grid tbody tr:nth-child(even) { background: #fdf9f0; }
+  table.grid td { padding: 6px 7px; vertical-align: middle; }
+  table.grid td.r { text-align: right; }
+  table.grid td.c { text-align: center; }
+  table.grid td.blank { color: #ccc; }
+
+  /* ── Sign-off strip ───────────────────────────────────────── */
+  .signoff { border: 1px solid #e0cfa0; border-radius: 3px; padding: 10px; margin-bottom: 14px; }
+  .signoff-row { display: flex; gap: 16px; }
+  .signoff-field { flex: 1; }
+  .signoff-lbl { font-size: 7pt; text-transform: uppercase; color: #999;
+                 letter-spacing: 0.6px; margin-bottom: 2px; }
+  .signoff-line { border-bottom: 1px solid #ccc; height: 18px; }
+  .remarks-line { border-bottom: 1px solid #ccc; height: 18px; margin-top: 4px; }
+
+  /* ── Footer ───────────────────────────────────────────────── */
+  .footer { display: flex; justify-content: space-between; margin-top: 24px;
+            padding-top: 8px; border-top: 1px solid #eee; }
+  .footer .printed { font-size: 7pt; color: #999; }
+  .sig  { border-top: 1px solid #aaa; padding-top: 4px; width: 155px;
+          text-align: center; font-size: 8pt; color: #666; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="co-name">{{ doc.company }}</div>
+    <div class="co-addr">
+      {{ company.address_line1 or '' }}{% if company.address_line2 %}, {{ company.address_line2 }}{% endif %}
+      {% if company.city %}<br>{{ company.city }}{% if company.state %}, {{ company.state }}{% endif %}{% if company.pincode %} {{ company.pincode }}{% endif %}{% endif %}
+    </div>
+  </div>
+  <div class="doc-block">
+    <div class="doc-info">
+      <div class="doc-title">WORK ORDER</div>
+      <div class="doc-meta">
+        Work Order No.: <b>{{ doc.name }}</b><br>
+        {% if doc.expected_delivery_date %}Delivery By: <b>{{ frappe.format(doc.expected_delivery_date, "Date") }}</b><br>{% endif %}
+        {% if doc.sales_order %}Sales Order: <b>{{ doc.sales_order }}</b>{% endif %}
+      </div>
+      <div class="status-badge">{{ doc.status }}</div>
+    </div>
+    <div class="qr-box">
+      <img src="{{ qr_code }}" alt="QR Code">
+      <div class="qr-lbl">Scan to Track</div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAILS -->
+<div class="sec">Order Details</div>
+<div class="details-grid">
+  <div class="detail">
+    <div class="detail-lbl">Item to Manufacture</div>
+    <div class="detail-val">{{ doc.item_name or doc.production_item }}</div>
+  </div>
+  <div class="detail">
+    <div class="detail-lbl">Qty to Manufacture</div>
+    <div class="detail-val">{{ doc.qty }} {{ doc.stock_uom or '' }}</div>
+  </div>
+  <div class="detail">
+    <div class="detail-lbl">Manufactured Qty</div>
+    <div class="detail-val">{{ doc.produced_qty or 0 }} {{ doc.stock_uom or '' }}</div>
+  </div>
+  <div class="detail">
+    <div class="detail-lbl">BOM No.</div>
+    <div class="detail-val">{{ doc.bom_no or '—' }}</div>
+  </div>
+  {% if doc.get("karat") %}
+  <div class="detail">
+    <div class="detail-lbl">Karat / Purity</div>
+    <div class="detail-val">{{ doc.karat }}</div>
+  </div>
+  {% endif %}
+  <div class="detail">
+    <div class="detail-lbl">Planned Start</div>
+    <div class="detail-val">{{ frappe.format(doc.planned_start_date, "Datetime") if doc.planned_start_date else '—' }}</div>
+  </div>
+  <div class="detail">
+    <div class="detail-lbl">Planned End</div>
+    <div class="detail-val">{{ frappe.format(doc.planned_end_date, "Datetime") if doc.planned_end_date else '—' }}</div>
+  </div>
+  <div class="detail">
+    <div class="detail-lbl">Actual Start</div>
+    <div class="detail-val">{{ frappe.format(doc.actual_start_date, "Datetime") if doc.actual_start_date else '—' }}</div>
+  </div>
+  <div class="detail">
+    <div class="detail-lbl">Actual End</div>
+    <div class="detail-val">{{ frappe.format(doc.actual_end_date, "Datetime") if doc.actual_end_date else '—' }}</div>
+  </div>
+  <div class="detail">
+    <div class="detail-lbl">Source Warehouse</div>
+    <div class="detail-val">{{ doc.source_warehouse or '—' }}</div>
+  </div>
+  <div class="detail">
+    <div class="detail-lbl">WIP Warehouse</div>
+    <div class="detail-val">{{ doc.wip_warehouse or '—' }}</div>
+  </div>
+  <div class="detail">
+    <div class="detail-lbl">Target Warehouse</div>
+    <div class="detail-val">{{ doc.fg_warehouse or '—' }}</div>
+  </div>
+</div>
+
+<!-- OPERATIONS -->
+{% if doc.operations %}
+<div class="sec">Operations</div>
+<table class="grid">
+  <thead>
+    <tr>
+      <th style="width:4%">#</th>
+      <th style="width:26%">Operation</th>
+      <th style="width:18%">Workstation</th>
+      <th class="c" style="width:14%">Status</th>
+      <th class="r" style="width:12%">Planned Time (min)</th>
+      <th class="r" style="width:12%">Actual Time (min)</th>
+      <th class="r" style="width:14%">Completed Qty</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for op in doc.operations %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td><b>{{ op.operation }}</b></td>
+      <td>{{ op.workstation or '—' }}</td>
+      <td class="c">{{ op.status or '—' }}</td>
+      <td class="r">{{ "%.1f"|format(op.time_in_mins or 0) }}</td>
+      <td class="r">{{ "%.1f"|format(op.actual_operation_time or 0) }}</td>
+      <td class="r">{{ op.completed_qty or 0 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- MATERIALS REQUIRED -->
+{% if doc.required_items %}
+<div class="sec">Materials Required</div>
+<table class="grid">
+  <thead>
+    <tr>
+      <th style="width:4%">#</th>
+      <th style="width:32%">Item</th>
+      <th style="width:16%">Warehouse</th>
+      <th class="r" style="width:14%">Required Qty</th>
+      <th class="r" style="width:14%">Transferred Qty</th>
+      <th class="r" style="width:14%">Consumed Qty</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in doc.required_items %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td><b>{{ item.item_name or item.item_code }}</b></td>
+      <td>{{ item.source_warehouse or '—' }}</td>
+      <td class="r">{{ item.required_qty }} {{ item.stock_uom or '' }}</td>
+      <td class="r">{{ item.transferred_qty or 0 }} {{ item.stock_uom or '' }}</td>
+      <td class="r">{{ item.consumed_qty or 0 }} {{ item.stock_uom or '' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- SIGN-OFF / SHOP FLOOR REMARKS -->
+<div class="sec">Shop Floor Sign-Off</div>
+<div class="signoff">
+  <div class="signoff-row">
+    <div class="signoff-field">
+      <div class="signoff-lbl">Operator Name</div>
+      <div class="signoff-line"></div>
+    </div>
+    <div class="signoff-field">
+      <div class="signoff-lbl">Weight In (g)</div>
+      <div class="signoff-line"></div>
+    </div>
+    <div class="signoff-field">
+      <div class="signoff-lbl">Weight Out (g)</div>
+      <div class="signoff-line"></div>
+    </div>
+  </div>
+  <div class="signoff-lbl" style="margin-top:8px;">Remarks</div>
+  <div class="remarks-line"></div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="printed">Printed on {{ frappe.utils.now_datetime().strftime("%d-%m-%Y %H:%M") }}</div>
+</div>
+<div class="sigs" style="display:flex; justify-content:space-between; margin-top:24px;">
+  <div class="sig">Operator Signature</div>
+  <div class="sig">Supervisor Signature<br><span style="font-size:7.5pt;color:#aaa;">{{ doc.company }}</span></div>
+</div>
+
+</body>
+</html>

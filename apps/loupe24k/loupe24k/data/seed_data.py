@@ -3073,7 +3073,7 @@ def _seed_workspace():
 # ── Print Formats ─────────────────────────────────────────────────────────────
 
 def _seed_print_formats():
-    """Create jewellery print formats for Quotation and Sales Order and set them as default."""
+    """Create jewellery print formats for Quotation, Sales Order and Work Order and set them as default."""
     import os
 
     _pf_dir = os.path.join(
@@ -3091,6 +3091,11 @@ def _seed_print_formats():
             "name": "Jewellery Sales Order",
             "doc_type": "Sales Order",
             "html_file": os.path.join(_pf_dir, "jewellery_sales_order", "jewellery_sales_order.html"),
+        },
+        {
+            "name": "Work Order Traveler",
+            "doc_type": "Work Order",
+            "html_file": os.path.join(_pf_dir, "work_order_traveler", "work_order_traveler.html"),
         },
     ]
 
