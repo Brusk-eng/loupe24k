@@ -10,11 +10,15 @@
          print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 
   /* ── Header ───────────────────────────────────────────────── */
-  .header { display: flex; justify-content: space-between; align-items: flex-start;
-            margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2.5px solid #8B6914; }
+  /* Table-based layout (not flexbox) — wkhtmltopdf's PDF renderer has
+     unreliable flexbox support and collapses flex rows into a stacked
+     column, so the header/QR/details layouts below all use <table> or
+     float instead. */
+  table.header { width: 100%; margin-bottom: 16px; padding-bottom: 10px;
+                 border-bottom: 2.5px solid #8B6914; border-collapse: collapse; }
+  table.header td { vertical-align: top; padding: 0; }
   .co-name  { font-size: 20pt; font-weight: bold; color: #8B6914; line-height: 1.1; }
   .co-addr  { font-size: 7.5pt; color: #666; margin-top: 4px; line-height: 1.55; }
-  .doc-block { display: flex; align-items: flex-start; gap: 12px; }
   .doc-info { text-align: right; }
   .doc-title { font-size: 13pt; font-weight: bold; color: #8B6914; letter-spacing: 1.5px; }
   .doc-meta  { font-size: 8pt; color: #555; margin-top: 5px; line-height: 1.8; }
@@ -22,8 +26,8 @@
   .status-badge { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 3px;
                   font-size: 7.5pt; font-weight: bold; text-transform: uppercase;
                   background: #f0e6c8; color: #8B6914; letter-spacing: 0.5px; }
-  .qr-box { text-align: center; }
-  .qr-box img { width: 70px; height: 70px; }
+  .qr-cell { width: 80px; text-align: center; }
+  .qr-cell img { width: 70px; height: 70px; }
   .qr-lbl { font-size: 6pt; color: #999; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
 
   /* ── Section title ────────────────────────────────────────── */
@@ -32,8 +36,9 @@
          border-bottom: 1px solid #d4aa45; padding-bottom: 3px; margin-bottom: 7px; }
 
   /* ── Order details grid ───────────────────────────────────── */
-  .details-grid { display: flex; flex-wrap: wrap; gap: 0 24px; margin-bottom: 14px; }
-  .detail { width: 23%; margin-bottom: 8px; }
+  .details-grid { margin-bottom: 14px; overflow: hidden; }
+  .detail { float: left; width: 23%; margin-right: 2.66%; margin-bottom: 8px; }
+  .detail:nth-child(4n) { margin-right: 0; }
   .detail-lbl { font-size: 7pt; text-transform: uppercase; color: #999;
                 letter-spacing: 0.6px; margin-bottom: 2px; }
   .detail-val { font-size: 9pt; font-weight: bold; }
@@ -53,35 +58,37 @@
   table.grid td.blank { color: #ccc; }
 
   /* ── Sign-off strip ───────────────────────────────────────── */
-  .signoff { border: 1px solid #e0cfa0; border-radius: 3px; padding: 10px; margin-bottom: 14px; }
-  .signoff-row { display: flex; gap: 16px; }
-  .signoff-field { flex: 1; }
+  .signoff { border: 1px solid #e0cfa0; border-radius: 3px; padding: 10px; margin-bottom: 14px; overflow: hidden; }
+  .signoff-row { overflow: hidden; }
+  .signoff-field { float: left; width: 31.33%; margin-right: 3%; }
+  .signoff-field:last-child { margin-right: 0; }
   .signoff-lbl { font-size: 7pt; text-transform: uppercase; color: #999;
                  letter-spacing: 0.6px; margin-bottom: 2px; }
   .signoff-line { border-bottom: 1px solid #ccc; height: 18px; }
   .remarks-line { border-bottom: 1px solid #ccc; height: 18px; margin-top: 4px; }
 
   /* ── Footer ───────────────────────────────────────────────── */
-  .footer { display: flex; justify-content: space-between; margin-top: 24px;
-            padding-top: 8px; border-top: 1px solid #eee; }
+  .footer { margin-top: 24px; padding-top: 8px; border-top: 1px solid #eee; }
   .footer .printed { font-size: 7pt; color: #999; }
-  .sig  { border-top: 1px solid #aaa; padding-top: 4px; width: 155px;
+  table.sigs { width: 100%; margin-top: 24px; border-collapse: collapse; }
+  table.sigs td { padding: 0; }
+  .sig  { display: inline-block; border-top: 1px solid #aaa; padding-top: 4px; width: 155px;
           text-align: center; font-size: 8pt; color: #666; }
 </style>
 </head>
 <body>
 
 <!-- HEADER -->
-<div class="header">
-  <div>
-    <div class="co-name">{{ doc.company }}</div>
-    <div class="co-addr">
-      {{ company.address_line1 or '' }}{% if company.address_line2 %}, {{ company.address_line2 }}{% endif %}
-      {% if company.city %}<br>{{ company.city }}{% if company.state %}, {{ company.state }}{% endif %}{% if company.pincode %} {{ company.pincode }}{% endif %}{% endif %}
-    </div>
-  </div>
-  <div class="doc-block">
-    <div class="doc-info">
+<table class="header">
+  <tr>
+    <td>
+      <div class="co-name">{{ doc.company }}</div>
+      <div class="co-addr">
+        {{ company.address_line1 or '' }}{% if company.address_line2 %}, {{ company.address_line2 }}{% endif %}
+        {% if company.city %}<br>{{ company.city }}{% if company.state %}, {{ company.state }}{% endif %}{% if company.pincode %} {{ company.pincode }}{% endif %}{% endif %}
+      </div>
+    </td>
+    <td class="doc-info">
       <div class="doc-title">WORK ORDER</div>
       <div class="doc-meta">
         Work Order No.: <b>{{ doc.name }}</b><br>
@@ -89,13 +96,13 @@
         {% if doc.sales_order %}Sales Order: <b>{{ doc.sales_order }}</b>{% endif %}
       </div>
       <div class="status-badge">{{ doc.status }}</div>
-    </div>
-    <div class="qr-box">
+    </td>
+    <td class="qr-cell">
       <img src="{{ qr_code }}" alt="QR Code">
       <div class="qr-lbl">Scan to Track</div>
-    </div>
-  </div>
-</div>
+    </td>
+  </tr>
+</table>
 
 <!-- ORDER DETAILS -->
 <div class="sec">Order Details</div>
@@ -237,10 +244,12 @@
 <div class="footer">
   <div class="printed">Printed on {{ frappe.utils.now_datetime().strftime("%d-%m-%Y %H:%M") }}</div>
 </div>
-<div class="sigs" style="display:flex; justify-content:space-between; margin-top:24px;">
-  <div class="sig">Operator Signature</div>
-  <div class="sig">Supervisor Signature<br><span style="font-size:7.5pt;color:#aaa;">{{ doc.company }}</span></div>
-</div>
+<table class="sigs">
+  <tr>
+    <td style="width:50%; text-align:left;"><div class="sig">Operator Signature</div></td>
+    <td style="width:50%; text-align:right;"><div class="sig">Supervisor Signature<br><span style="font-size:7.5pt;color:#aaa;">{{ doc.company }}</span></div></td>
+  </tr>
+</table>
 
 </body>
 </html>
