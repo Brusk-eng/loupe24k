@@ -1,5 +1,5 @@
 x-image: &image
-  image: ${CUSTOM_IMAGE:-loupe24k-erpnext}:${CUSTOM_TAG:-v15}
+  image: ${CUSTOM_IMAGE:-loupe24k-erpnext}:${CUSTOM_TAG:-v16}
   pull_policy: ${PULL_POLICY:-missing}
   restart: unless-stopped
 

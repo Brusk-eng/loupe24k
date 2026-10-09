@@ -1619,15 +1619,26 @@ def _seed_hallmarking_entries():
 
 # ── CRM Leads ─────────────────────────────────────────────────────────────────
 
+def _lead_source_doctype():
+    """Lead's source link target: 'Lead Source' on ERPNext v15, 'UTM Source' on v16+."""
+    if frappe.get_meta("Lead").has_field("utm_source"):
+        return "UTM Source", "utm_source"
+    return "Lead Source", "source"
+
+
 def _seed_lead_sources():
-    """Ensure the Lead Source records used by seed leads exist."""
+    """Ensure the Lead Source / UTM Source records used by seed leads exist."""
     sources = ["Word of Mouth", "Trade Show", "Website"]
+    doctype, _ = _lead_source_doctype()
     for src in sources:
-        if not frappe.db.exists("Lead Source", src):
-            frappe.get_doc({
-                "doctype": "Lead Source",
-                "source_name": src,
-            }).insert(ignore_permissions=True)
+        if frappe.db.exists(doctype, src):
+            continue
+        payload = {"doctype": doctype}
+        if doctype == "Lead Source":
+            payload["source_name"] = src
+        else:
+            payload["name"] = src
+        frappe.get_doc(payload).insert(ignore_permissions=True)
 
 
 def _seed_crm_leads():
@@ -1637,6 +1648,7 @@ def _seed_crm_leads():
     to the correct Lead document names.
     """
     _seed_lead_sources()
+    _, source_fieldname = _lead_source_doctype()
 
     leads = [
         {
@@ -1672,7 +1684,8 @@ def _seed_crm_leads():
         if existing:
             lead_names[lead_data["email_id"]] = existing
             continue
-        doc = frappe.get_doc({"doctype": "Lead", **lead_data})
+        source = lead_data.pop("source")
+        doc = frappe.get_doc({"doctype": "Lead", source_fieldname: source, **lead_data})
         doc.insert(ignore_permissions=True)
         lead_names[lead_data["email_id"]] = doc.name
 

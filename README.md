@@ -124,7 +124,7 @@ For technical setup, Docker services, daily workflow, custom DocType reference, 
 
 ## Built On
 
-Loupe 24K is a custom application for [ERPNext](https://erpnext.com/) v15, the world's leading open-source ERP. ERPNext provides battle-tested financials, manufacturing, HR, and CRM out of the box — Loupe 24K adds the jewellery-specific layer on top without touching the core.
+Loupe 24K is a custom application for [ERPNext](https://erpnext.com/) (v16 by default, with a v15 fallback), the world's leading open-source ERP. ERPNext provides battle-tested financials, manufacturing, HR, and CRM out of the box — Loupe 24K adds the jewellery-specific layer on top without touching the core.
 
 ---
 

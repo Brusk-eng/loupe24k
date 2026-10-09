@@ -8,8 +8,8 @@ Technical reference for developers working on the Loupe 24K ERPNext customizatio
 
 | Component | Version | Role |
 |---|---|---|
-| ERPNext | v15 | Base ERP platform |
-| Frappe Framework | v15 | Web framework (Python + JS) |
+| ERPNext | v16 (default), v15 (fallback) | Base ERP platform |
+| Frappe Framework | v16 (default), v15 (fallback) | Web framework (Python + JS) |
 | MariaDB | 10.6 | Primary database |
 | Redis | 7 | Cache + background job queue |
 | nginx | (bundled) | Reverse proxy / static assets |
@@ -21,7 +21,7 @@ Technical reference for developers working on the Loupe 24K ERPNext customizatio
 
 ```
 loupe24k/
-├── Dockerfile                   # Extends frappe/erpnext:version-15, pip-installs loupe24k
+├── Dockerfile                   # Extends frappe/erpnext:${FRAPPE_BRANCH} (default version-16), pip-installs loupe24k
 ├── docker-compose.yml           # Full-stack service definition
 ├── Makefile                     # Dev workflow shortcuts
 ├── .env                         # Local secrets (gitignored)
@@ -354,6 +354,30 @@ make build && make restart
 | `db` | MariaDB 10.6 |
 | `redis-cache` | Page and query cache |
 | `redis-queue` | Job queue + Socket.IO pub/sub (persisted) |
+
+---
+
+## Switching ERPNext Version (v16 default / v15 fallback)
+
+Loupe 24K targets ERPNext/Frappe **v16** by default. The base image is parameterized so you
+can fall back to **v15** without touching code:
+
+1. Edit `.env`:
+   ```
+   ERPNEXT_VERSION=version-15
+   FRAPPE_VERSION=version-15
+   CUSTOM_TAG=v15
+   ```
+2. Rebuild the image: `make build`
+3. Recreate the site against the new image: `make nuke && make install` (or `make reset-site`
+   if you just want to rebuild the site on the existing containers).
+
+To go back to v16, restore `ERPNEXT_VERSION`/`FRAPPE_VERSION` to `version-16` and
+`CUSTOM_TAG` to `v16`, then rebuild.
+
+`CUSTOM_TAG` just namespaces the locally-built Docker image tag so v15 and v16 builds don't
+collide on your machine — `ERPNEXT_VERSION`/`FRAPPE_VERSION` are what actually select the
+`frappe/erpnext` base image via the `FRAPPE_BRANCH` build arg in the `Dockerfile`.
 
 ---
 

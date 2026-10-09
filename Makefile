@@ -11,8 +11,10 @@ COMPOSE      := docker compose --project-name $(PROJECT_NAME) -f docker-compose.
 
 help:
 	@echo ""
-	@echo "  Loup 24K — ERPNext v15 Dev Environment"
+	@echo "  Loup 24K — ERPNext Dev Environment (current target: $(FRAPPE_VERSION))"
 	@echo "  ======================================="
+	@echo "  Default: ERPNext v16. Set ERPNEXT_VERSION/FRAPPE_VERSION=version-15"
+	@echo "  and CUSTOM_TAG=v15 in .env, then 'make build', to switch back to v15."
 	@echo ""
 	@echo "  First-time setup:"
 	@echo "    make install      Build image, start services, create site, seed data (all-in-one)"
